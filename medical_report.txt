@@ -1,0 +1,15 @@
+Patient Name: Rajesh Kumar
+
+Age: 52
+
+Blood Sugar Fasting: 186 mg/dL
+
+HbA1c: 8.4%
+
+Blood Pressure: 150/95 mmHg
+
+Cholesterol Total: 245 mg/dL
+
+Triglycerides: 280 mg/dL
+
+Hemoglobin: 11.2 g/dL

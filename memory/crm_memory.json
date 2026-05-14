@@ -1,0 +1,21 @@
+[
+    {
+        "email": "martha ramesh <swaram143@gmail.com>",
+        "company": "",
+        "created_at": "2026-05-13 17:25:43.750388",
+        "status": "lead",
+        "engagement_score": 20,
+        "interactions": [
+            {
+                "type": "email_received",
+                "notes": "Fwd: interested in automation proposal",
+                "timestamp": "2026-05-13 17:25:43.778265"
+            },
+            {
+                "type": "email_received",
+                "notes": "Proposal discussion and pricing meeting",
+                "timestamp": "2026-05-13 17:25:45.269575"
+            }
+        ]
+    }
+]

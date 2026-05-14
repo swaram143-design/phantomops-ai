@@ -1,0 +1,41 @@
+{
+    "PeoplePerHour": {
+        "projects": [
+            {
+                "project": "Phoenix - Your AI Assistant\nInactive session will be ended in 24 hours\nEND SESSI",
+                "score": 130,
+                "timestamp": "2026-05-13 09:50:59.061194"
+            }
+        ],
+        "engagements": 1,
+        "wins": 0,
+        "losses": 0,
+        "last_seen": "2026-05-13 09:50:59.061214"
+    },
+    "Freelancer": {
+        "projects": [
+            {
+                "project": "\tHow It Works Browse Jobs\nLog In Sign Up\n\nFind Jobs\n\nHire Freelancers\n\nGet Ideas",
+                "score": 75,
+                "timestamp": "2026-05-13 09:51:02.031988"
+            }
+        ],
+        "engagements": 1,
+        "wins": 0,
+        "losses": 0,
+        "last_seen": "2026-05-13 09:51:02.032020"
+    },
+    "Upwork": {
+        "projects": [
+            {
+                "project": "Cloudflare Ray ID: 9faede4c7d5eff9a\n\nYour IP: 103.90.211.250\n\n\u00a9 2015 - 2026 Upwo",
+                "score": 15,
+                "timestamp": "2026-05-13 09:51:02.049812"
+            }
+        ],
+        "engagements": 1,
+        "wins": 0,
+        "losses": 0,
+        "last_seen": "2026-05-13 09:51:02.049834"
+    }
+}
