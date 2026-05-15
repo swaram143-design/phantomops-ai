@@ -1,16 +1,23 @@
-
 export default function Footer() {
   return (
-    <section className="px-6 py-24 bg-black border-b border-white/5">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-5xl font-black text-cyan-400 mb-6">
-          Footer
-        </h2>
+    <footer className="border-t border-white/10 bg-black px-6 py-10">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5">
 
-        <p className="text-zinc-400 text-lg max-w-3xl leading-relaxed">
-          Premium modular PhantomOps AI component architecture.
+        <div>
+          <h2 className="text-3xl font-black text-cyan-400">
+            PhantomOps AI
+          </h2>
+
+          <p className="text-zinc-500 text-sm mt-2">
+            Autonomous AI Infrastructure Platform
+          </p>
+        </div>
+
+        <p className="text-zinc-600 text-sm">
+          © 2026 PhantomOps AI — All Rights Reserved
         </p>
+
       </div>
-    </section>
+    </footer>
   );
 }

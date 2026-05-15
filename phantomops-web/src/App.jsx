@@ -1,21 +1,18 @@
-
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
+import RuntimeGrid from "./components/RuntimeGrid";
 import Services from "./components/Services";
-import Capabilities from "./components/Capabilities";
-import Industries from "./components/Industries";
-import Contact from "./components/Contact";
+import CTA from "./components/CTA";
 import Footer from "./components/Footer";
 
 export default function App() {
   return (
-    <div className="bg-[#03030a] text-white min-h-screen overflow-x-hidden">
+    <div className="bg-[#02040a] text-white min-h-screen overflow-x-hidden">
       <Navbar />
       <Hero />
+      <RuntimeGrid />
       <Services />
-      <Capabilities />
-      <Industries />
-      <Contact />
+      <CTA />
       <Footer />
     </div>
   );
