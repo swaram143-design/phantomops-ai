@@ -118,7 +118,7 @@ export default function PhantomOpsWebsite() {
         &&
         e.shiftKey
         &&
-        e.key === "A"
+        e.key === "`"
       ) {
 
         setAdminMode(
