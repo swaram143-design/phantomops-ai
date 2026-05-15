@@ -6,20 +6,52 @@ const [showCRM, setShowCRM] = useState(false);
 
 const [proposalGenerated, setProposalGenerated] = useState(false);
 
+const [proposalLoading, setProposalLoading] = useState(false);
+
 const [proposalData, setProposalData] = useState({
   company: "",
   requirement: "",
   budget: "",
 });
 
-const scrollToSection = (id) => {
-const element = document.getElementById(id);
+const triggerProposal = (system) => {
 
-if (element) {
-  element.scrollIntoView({
+  setProposalLoading(true);
+
+  setProposalGenerated(false);
+
+  setProposalData({
+    company: system,
+    requirement: "Autonomous AI Infrastructure",
+    budget: "$50k - $100k",
+  });
+
+  window.scrollTo({
+    top: document.body.scrollHeight - 1200,
     behavior: "smooth",
   });
-}
+
+  setTimeout(() => {
+
+    setProposalLoading(false);
+
+    setProposalGenerated(true);
+
+  }, 2200);
+
+};
+
+const scrollToSection = (id) => {
+
+  const element = document.getElementById(id);
+
+  if (element) {
+
+    element.scrollIntoView({
+      behavior: "smooth",
+    });
+
+  }
 
 };
 
@@ -293,19 +325,19 @@ return (
       <div className="grid lg:grid-cols-2 gap-8">
 
         {[
-          {
-            title: "PhantomOps CRM Intelligence",
-            status: "LIVE",
-            features: [
-              "AI lead scoring",
-              "Proposal generation",
-              "Autonomous followups",
-              "Revenue analytics",
-              "CRM automation",
-            ],
-            primary: "Open Dashboard",
-            secondary: "View Runtime",
-          },
+      {
+  title: "PhantomOps CRM Intelligence",
+  status: "LIVE",
+  features: [
+    "AI lead scoring",
+    "Proposal generation",
+    "Autonomous followups",
+    "Revenue analytics",
+    "CRM automation",
+  ],
+  primary: "Open Dashboard",
+  secondary: "View Runtime",
+},
           {
             title: "MediOps AI",
             status: "HEALTHCARE ACTIVE",
@@ -381,18 +413,26 @@ return (
 
             <div className="mt-10 flex flex-wrap gap-4">
 
-              <button
-                onClick={() => setShowCRM(true)}
-                className="px-6 py-4 rounded-2xl bg-cyan-400 text-black font-black"
-              >
-                {item.primary}
-              </button>
+  <button
+    onClick={() => triggerProposal(item.title)}
+    className="group relative overflow-hidden px-6 py-4 rounded-2xl bg-cyan-400 text-black font-black hover:scale-[1.03] transition-all duration-300"
+  >
 
-              <button className="px-6 py-4 rounded-2xl border border-white/10 bg-white/5">
-                {item.secondary}
-              </button>
+    <span className="relative z-10">
+      {item.primary}
+    </span>
 
-            </div>
+    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.45),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
+
+  </button>
+
+  <button
+    className="px-6 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-cyan-400/30 transition-all duration-300"
+  >
+    {item.secondary}
+  </button>
+
+</div>
 
           </motion.div>
 
@@ -723,15 +763,37 @@ return (
             Runtime Output
           </p>
 
-          {!proposalGenerated ? (
+          {proposalLoading ? (
 
-            <div className="h-[350px] flex items-center justify-center text-zinc-500 text-lg border border-dashed border-white/10 rounded-3xl">
+  <div className="h-[350px] flex flex-col items-center justify-center border border-dashed border-cyan-400/20 rounded-3xl bg-cyan-400/[0.03]">
 
-              Awaiting AI proposal generation...
+    <div className="w-16 h-16 rounded-full border-4 border-cyan-400/20 border-t-cyan-400 animate-spin mb-8" />
 
-            </div>
+    <p className="text-cyan-300 text-xl font-semibold mb-4">
+      Analyzing Runtime Infrastructure...
+    </p>
 
-          ) : (
+    <div className="space-y-3 text-sm text-zinc-500 text-center">
+
+      <p>✓ Scanning enterprise workflows</p>
+      <p>✓ Calculating automation efficiency</p>
+      <p>✓ Building AI deployment architecture</p>
+      <p>✓ Generating operational proposal</p>
+
+    </div>
+
+  </div>
+
+) : !proposalGenerated ? (
+
+  <div className="h-[350px] flex items-center justify-center text-zinc-500 text-lg border border-dashed border-white/10 rounded-3xl">
+
+    Awaiting AI proposal generation...
+
+  </div>
+
+) : (
+
 
             <div className="space-y-8">
 
