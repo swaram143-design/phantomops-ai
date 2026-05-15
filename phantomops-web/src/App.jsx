@@ -326,25 +326,37 @@ export default function PhantomOpsWebsite() {
 
                   <tr>
 
-                    <th className="text-left p-5">
-                      Name
-                    </th>
+                   <th className="text-left p-5">
+  ID
+</th>
 
-                    <th className="text-left p-5">
-                      Email
-                    </th>
+<th className="text-left p-5">
+  Name
+</th>
 
-                    <th className="text-left p-5">
-                      Company
-                    </th>
+<th className="text-left p-5">
+  Email
+</th>
 
-                    <th className="text-left p-5">
-                      Requirement
-                    </th>
+<th className="text-left p-5">
+  Company
+</th>
 
-                    <th className="text-left p-5">
-                      Created
-                    </th>
+<th className="text-left p-5">
+  Requirement
+</th>
+
+<th className="text-left p-5">
+  Status
+</th>
+
+<th className="text-left p-5">
+  Created
+</th>
+
+<th className="text-left p-5">
+  Actions
+</th>
 
                   </tr>
 
@@ -369,31 +381,99 @@ export default function PhantomOpsWebsite() {
 
                     leads.map((lead, index) => (
 
-                      <tr
-                        key={index}
-                        className="border-t border-white/5 hover:bg-white/5"
-                      >
+                     <tr
+  key={index}
+  className="border-t border-white/5 hover:bg-white/5"
+>
 
-                        <td className="p-5">
-                          {lead.name}
-                        </td>
+  <td className="p-5">
+    #{lead.id}
+  </td>
 
-                        <td className="p-5 text-cyan-400">
-                          {lead.email}
-                        </td>
+  <td className="p-5">
+    {lead.name}
+  </td>
 
-                        <td className="p-5">
-                          {lead.company}
-                        </td>
+  <td className="p-5 text-cyan-400">
+    {lead.email}
+  </td>
 
-                        <td className="p-5">
-                          {lead.need}
-                        </td>
+  <td className="p-5">
+    {lead.company}
+  </td>
 
-                        <td className="p-5 text-zinc-500">
-                          {lead.created_at}
-                        </td>
+  <td className="p-5">
+    {lead.need}
+  </td>
 
+  <td className="p-5">
+
+    <select
+      value={lead.status || "New"}
+      onChange={async (e) => {
+
+        await fetch(
+          `${API_URL}/lead-status/${lead.id}?status=${e.target.value}`,
+          {
+            method: "PUT",
+          }
+        );
+
+        loadLeads();
+      }}
+      className="bg-black border border-white/10 rounded-xl px-3 py-2"
+    >
+
+      <option>
+        New
+      </option>
+
+      <option>
+        Contacted
+      </option>
+
+      <option>
+        Proposal Sent
+      </option>
+
+      <option>
+        Closed
+      </option>
+
+      <option>
+        Lost
+      </option>
+
+    </select>
+
+  </td>
+
+  <td className="p-5 text-zinc-500">
+    {lead.created_at}
+  </td>
+
+  <td className="p-5">
+
+    <button
+      onClick={async () => {
+
+        await fetch(
+          `${API_URL}/delete-lead/${lead.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        loadLeads();
+      }}
+      className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white"
+    >
+      Delete
+    </button>
+
+  </td>
+
+</tr>
                       </tr>
 
                     ))
