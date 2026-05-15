@@ -459,9 +459,25 @@ export default function PhantomOpsWebsite() {
 
           </div>
 
-          <button className="px-5 py-2 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black font-semibold transition">
-            Book Consultation
-          </button>
+          <div className="flex items-center gap-3">
+
+  <a
+    href="#contact"
+    className="px-5 py-2 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black font-semibold transition"
+  >
+    Book Consultation
+  </a>
+
+  <button
+    onClick={() =>
+      setAdminMode(true)
+    }
+    className="px-5 py-2 rounded-full bg-purple-500 hover:bg-purple-400 text-white font-semibold transition"
+  >
+    Open CRM
+  </button>
+
+</div>
 
         </nav>
 
