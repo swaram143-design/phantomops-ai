@@ -4,6 +4,14 @@ import { motion } from "framer-motion";
 export default function App() {
 const [showCRM, setShowCRM] = useState(false);
 
+const [proposalGenerated, setProposalGenerated] = useState(false);
+
+const [proposalData, setProposalData] = useState({
+  company: "",
+  requirement: "",
+  budget: "",
+});
+
 const scrollToSection = (id) => {
 const element = document.getElementById(id);
 
@@ -593,6 +601,221 @@ return (
     </div>
 
   </section>
+
+{/* AI PROPOSAL GENERATOR */}
+
+<section className="relative z-10 px-6 py-32">
+
+  <div className="max-w-7xl mx-auto">
+
+    <div className="text-center mb-20">
+
+      <p className="text-cyan-400 uppercase tracking-[0.35em] text-xs mb-6">
+        Autonomous Intelligence Layer
+      </p>
+
+      <h2 className="text-5xl md:text-7xl font-black leading-tight mb-8">
+
+        AI Proposal
+        <br />
+
+        Generator Runtime
+
+      </h2>
+
+      <p className="text-zinc-400 text-xl max-w-3xl mx-auto leading-relaxed">
+
+        Simulate autonomous proposal generation powered by the PhantomOps infrastructure runtime.
+
+      </p>
+
+    </div>
+
+    <div className="grid lg:grid-cols-2 gap-10 items-start">
+
+      {/* LEFT PANEL */}
+
+      <div className="relative overflow-hidden rounded-[32px] border border-cyan-500/20 bg-white/[0.03] backdrop-blur-2xl p-10 shadow-[0_0_80px_rgba(34,211,238,0.08)]">
+
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_60%)]" />
+
+        <div className="relative z-10">
+
+          <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-8">
+            Proposal Input
+          </p>
+
+          <div className="space-y-6">
+
+            <input
+              type="text"
+              placeholder="Company Name"
+              value={proposalData.company}
+              onChange={(e) =>
+                setProposalData({
+                  ...proposalData,
+                  company: e.target.value,
+                })
+              }
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-white outline-none focus:border-cyan-400/40"
+            />
+
+            <input
+              type="text"
+              placeholder="Business Requirement"
+              value={proposalData.requirement}
+              onChange={(e) =>
+                setProposalData({
+                  ...proposalData,
+                  requirement: e.target.value,
+                })
+              }
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-white outline-none focus:border-cyan-400/40"
+            />
+
+            <select
+              value={proposalData.budget}
+              onChange={(e) =>
+                setProposalData({
+                  ...proposalData,
+                  budget: e.target.value,
+                })
+              }
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-white outline-none focus:border-cyan-400/40"
+            >
+
+              <option value="">Select Budget</option>
+              <option>$5k - $15k</option>
+              <option>$15k - $50k</option>
+              <option>$50k - $100k</option>
+              <option>$100k+</option>
+
+            </select>
+
+            <button
+              onClick={() => setProposalGenerated(true)}
+              className="group relative overflow-hidden w-full rounded-2xl bg-cyan-400 px-8 py-5 text-black font-black hover:scale-[1.02] transition-all duration-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.35)]"
+            >
+
+              <span className="relative z-10">
+                Generate AI Proposal
+              </span>
+
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* RIGHT PANEL */}
+
+      <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-2xl p-10 min-h-[500px]">
+
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.15),transparent_60%)]" />
+
+        <div className="relative z-10">
+
+          <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-8">
+            Runtime Output
+          </p>
+
+          {!proposalGenerated ? (
+
+            <div className="h-[350px] flex items-center justify-center text-zinc-500 text-lg border border-dashed border-white/10 rounded-3xl">
+
+              Awaiting AI proposal generation...
+
+            </div>
+
+          ) : (
+
+            <div className="space-y-8">
+
+              <div>
+
+                <p className="text-zinc-500 text-sm mb-2">
+                  Client
+                </p>
+
+                <h3 className="text-4xl font-black text-white">
+                  {proposalData.company || "Enterprise Client"}
+                </h3>
+
+              </div>
+
+              <div className="grid gap-4">
+
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+                  ✓ MediOps AI Deployment Recommended
+                </div>
+
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+                  ✓ CRM Intelligence Runtime Activated
+                </div>
+
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+                  ✓ Outreach AI Infrastructure Connected
+                </div>
+
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-6">
+
+                  <p className="text-zinc-500 text-sm mb-2">
+                    Deployment Timeline
+                  </p>
+
+                  <h4 className="text-3xl font-black">
+                    14 Days
+                  </h4>
+
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-6">
+
+                  <p className="text-zinc-500 text-sm mb-2">
+                    Automation Gain
+                  </p>
+
+                  <h4 className="text-3xl font-black text-cyan-400">
+                    +82%
+                  </h4>
+
+                </div>
+
+              </div>
+
+              <div className="rounded-3xl border border-green-500/20 bg-green-500/10 p-6">
+
+                <p className="text-green-300 text-sm uppercase tracking-[0.2em] mb-3">
+                  Runtime Status
+                </p>
+
+                <h4 className="text-2xl font-black">
+                  AI Proposal Generated Successfully
+                </h4>
+
+              </div>
+
+            </div>
+
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
 
   {/* INDUSTRIES */}
   <section
