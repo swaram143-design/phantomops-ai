@@ -139,6 +139,42 @@ return (
 
       </div>
 
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-16">
+
+  {[
+    ["98%", "Automation Efficiency"],
+    ["12,847", "Leads Processed"],
+    ["24/7", "Runtime Stability"],
+    ["400+", "Marketplace Sources"],
+  ].map((item, index) => (
+
+    <motion.div
+      key={index}
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.2 }}
+      className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl p-6 group"
+    >
+
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-all duration-500" />
+
+      <div className="relative z-10">
+
+        <h3 className="text-4xl font-black text-cyan-400">
+          {item[0]}
+        </h3>
+
+        <p className="text-zinc-400 text-sm mt-3">
+          {item[1]}
+        </p>
+
+      </div>
+
+    </motion.div>
+
+  ))}
+
+</div>
+
       {/* TERMINAL */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -333,6 +369,164 @@ return (
 
   </section>
 
+<section className="relative z-10 px-6 py-28">
+
+  <div className="max-w-7xl mx-auto">
+
+    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10 mb-16">
+
+      <div>
+
+        <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-5">
+          Autonomous Runtime Activity
+        </p>
+
+        <h2 className="text-5xl lg:text-6xl font-black leading-none">
+
+          Live AI
+          <span className="block text-zinc-500 mt-3">
+            Operational Feed
+          </span>
+
+        </h2>
+
+      </div>
+
+      <div className="flex items-center gap-4 px-6 py-4 rounded-2xl border border-green-500/20 bg-green-500/10 backdrop-blur-xl">
+
+        <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+        <span className="text-green-300 text-sm font-medium">
+          Runtime Infrastructure Active
+        </span>
+
+      </div>
+
+    </div>
+
+    <div className="grid lg:grid-cols-2 gap-8">
+
+      <div className="bg-white/5 border border-white/10 rounded-[36px] p-8 backdrop-blur-2xl">
+
+        <div className="space-y-5 font-mono text-sm">
+
+          {[
+            "✓ Enterprise proposal generated successfully",
+            "✓ AI outreach pipeline launched",
+            "✓ Marketplace signal detected",
+            "✓ Revenue analytics synchronized",
+            "✓ CRM followup automation scheduled",
+            "✓ WhatsApp campaign deployed",
+            "✓ Lead score increased to 94%",
+            "✓ Autonomous runtime stabilized",
+          ].map((item, index) => (
+
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{
+                duration: 0.4,
+                delay: index * 0.08,
+              }}
+              className="flex items-center gap-4 p-4 rounded-2xl border border-white/5 bg-black/20"
+            >
+
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+
+              <p className="text-zinc-300">
+                {item}
+              </p>
+
+            </motion.div>
+
+          ))}
+
+        </div>
+
+      </div>
+
+      <div className="grid gap-6">
+
+        <motion.div
+          whileHover={{ y: -5 }}
+          className="relative overflow-hidden rounded-[36px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-transparent p-8 backdrop-blur-2xl"
+        >
+
+          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.3),transparent_70%)]" />
+
+          <div className="relative z-10">
+
+            <p className="text-zinc-500 text-sm">
+              Runtime Uptime
+            </p>
+
+            <h3 className="text-6xl font-black mt-4">
+              847h
+            </h3>
+
+            <p className="text-cyan-300 mt-4">
+              Continuous autonomous runtime
+            </p>
+
+          </div>
+
+        </motion.div>
+
+        <motion.div
+          whileHover={{ y: -5 }}
+          className="relative overflow-hidden rounded-[36px] border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-transparent p-8 backdrop-blur-2xl"
+        >
+
+          <div className="relative z-10">
+
+            <p className="text-zinc-500 text-sm">
+              AI Proposal Speed
+            </p>
+
+            <h3 className="text-6xl font-black mt-4">
+              4.2s
+            </h3>
+
+            <p className="text-purple-300 mt-4">
+              Average generation runtime
+            </p>
+
+          </div>
+
+        </motion.div>
+
+        <motion.div
+          whileHover={{ y: -5 }}
+          className="relative overflow-hidden rounded-[36px] border border-green-500/20 bg-gradient-to-br from-green-500/10 to-transparent p-8 backdrop-blur-2xl"
+        >
+
+          <div className="relative z-10">
+
+            <p className="text-zinc-500 text-sm">
+              Runtime Efficiency
+            </p>
+
+            <h3 className="text-6xl font-black mt-4">
+              98.4%
+            </h3>
+
+            <p className="text-green-300 mt-4">
+              AI automation optimization
+            </p>
+
+          </div>
+
+        </motion.div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
   {/* RUNTIME */}
   <section
     id="runtime"
@@ -443,35 +637,96 @@ return (
   </footer>
 
   {/* CRM MODAL */}
-  {showCRM && (
+{showCRM && (
 
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
+  <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
 
-      <div className="bg-[#0b1120] border border-cyan-500/20 rounded-[32px] max-w-4xl w-full p-10 relative">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-[#0b1120] border border-cyan-500/20 rounded-[32px] max-w-6xl w-full p-10 relative shadow-[0_0_80px_rgba(34,211,238,0.15)]"
+    >
 
-        <button
-          onClick={() => setShowCRM(false)}
-          className="absolute top-5 right-5 text-zinc-400 hover:text-white"
-        >
-          ✕
-        </button>
+      <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
 
-        <h2 className="text-4xl font-black mb-10">
-          PhantomOps CRM
-        </h2>
+      <button
+        onClick={() => setShowCRM(false)}
+        className="absolute top-5 right-5 text-zinc-400 hover:text-white transition-all"
+      >
+        ✕
+      </button>
 
-        <div className="overflow-auto">
+      <div className="relative z-10">
 
-          <table className="w-full text-left">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-10">
+
+          <div>
+
+            <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-4">
+              AI CRM Infrastructure
+            </p>
+
+            <h2 className="text-5xl font-black">
+              PhantomOps CRM
+            </h2>
+
+          </div>
+
+          <div className="flex items-center gap-4 px-5 py-3 rounded-2xl border border-green-500/20 bg-green-500/10">
+
+            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+
+            <span className="text-green-300 text-sm">
+              Runtime Active
+            </span>
+
+          </div>
+
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+
+          {[
+            ["847", "Active Leads"],
+            ["98%", "AI Efficiency"],
+            ["4.2s", "Proposal Runtime"],
+            ["24/7", "Automation Status"],
+          ].map((item, index) => (
+
+            <motion.div
+              key={index}
+              whileHover={{ y: -5 }}
+              className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6"
+            >
+
+              <h3 className="text-3xl font-black text-cyan-400">
+                {item[0]}
+              </h3>
+
+              <p className="text-zinc-500 text-sm mt-3">
+                {item[1]}
+              </p>
+
+            </motion.div>
+
+          ))}
+
+        </div>
+
+        <div className="overflow-auto rounded-3xl border border-white/10 bg-black/20">
+
+          <table className="w-full text-left min-w-[900px]">
 
             <thead>
 
               <tr className="border-b border-white/10">
 
-                <th className="p-5">Name</th>
-                <th className="p-5">Email</th>
-                <th className="p-5">Company</th>
+                <th className="p-5">Lead</th>
+                <th className="p-5">System</th>
                 <th className="p-5">Requirement</th>
+                <th className="p-5">Runtime Status</th>
+                <th className="p-5">AI Score</th>
 
               </tr>
 
@@ -479,31 +734,101 @@ return (
 
             <tbody>
 
-              <tr className="border-b border-white/5">
+              {[
+                {
+                  name: "Ramesh",
+                  company: "PhantomOps",
+                  requirement: "Autonomous AI Infrastructure",
+                  status: "HIGH PRIORITY",
+                  score: "98%",
+                },
+                {
+                  name: "MediCore Hospitals",
+                  company: "MediOps AI",
+                  requirement: "Hospital Workflow Automation",
+                  status: "ACTIVE",
+                  score: "94%",
+                },
+                {
+                  name: "ScaleFlow Ventures",
+                  company: "Outreach AI",
+                  requirement: "AI Revenue Operations",
+                  status: "PROPOSAL SENT",
+                  score: "91%",
+                },
+                {
+                  name: "NovaGrid Systems",
+                  company: "GRAM Runtime",
+                  requirement: "Multi-Agent Infrastructure",
+                  status: "FOLLOWUP",
+                  score: "89%",
+                },
+              ].map((lead, index) => (
 
-                <td className="p-5">Ramesh</td>
-                <td className="p-5 text-cyan-400">
-                  demo@phantomops.ai
-                </td>
-                <td className="p-5">PhantomOps</td>
-                <td className="p-5">
-                  Autonomous AI Infrastructure
-                </td>
+                <motion.tr
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.08 }}
+                  className="border-b border-white/5 hover:bg-white/5 transition-all"
+                >
 
-              </tr>
+                  <td className="p-5 font-medium">
+                    {lead.name}
+                  </td>
 
-              <tr className="border-b border-white/5">
+                  <td className="p-5">
 
-                <td className="p-5">Healthcare Lead</td>
-                <td className="p-5 text-cyan-400">
-                  hospital@med.ai
-                </td>
-                <td className="p-5">MediOps</td>
-                <td className="p-5">
-                  Hospital AI Automation
-                </td>
+                    <span className="text-cyan-400">
+                      {lead.company}
+                    </span>
 
-              </tr>
+                  </td>
+
+                  <td className="p-5 text-zinc-300">
+                    {lead.requirement}
+                  </td>
+
+                  <td className="p-5">
+
+                    <div className="flex items-center gap-3">
+
+                      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+
+                      <span className="px-3 py-1 rounded-full text-xs bg-green-500/10 border border-green-500/20 text-green-300">
+                        {lead.status}
+                      </span>
+
+                    </div>
+
+                  </td>
+
+                  <td className="p-5">
+
+                    <div className="flex items-center gap-3">
+
+                      <div className="w-24 h-2 rounded-full bg-white/10 overflow-hidden">
+
+                        <div
+                          className="h-full bg-cyan-400 rounded-full"
+                          style={{
+                            width: lead.score,
+                          }}
+                        />
+
+                      </div>
+
+                      <span className="text-cyan-300 text-sm">
+                        {lead.score}
+                      </span>
+
+                    </div>
+
+                  </td>
+
+                </motion.tr>
+
+              ))}
 
             </tbody>
 
@@ -513,9 +838,11 @@ return (
 
       </div>
 
-    </div>
+      </motion.div>
 
-  )}
+  </div>
+
+)}
 
 </div>
 
