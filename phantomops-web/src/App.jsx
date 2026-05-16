@@ -57,7 +57,18 @@ const scrollToSection = (id) => {
 };
 
 return (
-<div className="min-h-screen bg-[#02040a] text-white overflow-x-hidden">
+<div className="relative min-h-screen bg-[#02040a] text-white overflow-x-hidden">
+{/* AMBIENT BACKGROUND */}
+
+<div className="absolute inset-0 overflow-hidden pointer-events-none">
+
+  <div className="absolute top-[-200px] left-[-100px] w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-[140px] animate-pulse" />
+
+  <div className="absolute bottom-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[140px] animate-pulse" />
+
+  <div className="absolute top-[40%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-cyan-400/5 blur-[120px]" />
+
+</div>
 
   {/* BACKGROUND */}
   <div className="fixed inset-0 z-0 overflow-hidden">
@@ -458,7 +469,10 @@ return (
 
           <motion.div
             key={index}
-            whileHover={{ y: -10 }}
+            whileHover={{
+  y: -8,
+  scale: 1.015,
+}}
             className="bg-white/5 border border-white/10 rounded-[40px] p-10 backdrop-blur-2xl hover:border-cyan-400/30 transition-all duration-500"
           >
 
