@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 export default function App() {
 const [showCRM, setShowCRM] = useState(false);
+const [mobileMenu, setMobileMenu] = useState(false);
 
 const [proposalGenerated, setProposalGenerated] = useState(false);
 
@@ -85,6 +86,16 @@ return (
       </div>
 
       <div className="hidden md:flex items-center gap-10 text-sm text-zinc-300">
+<button
+  onClick={() => setMobileMenu(!mobileMenu)}
+  className="md:hidden flex flex-col gap-1.5"
+>
+
+  <span className="w-7 h-[2px] bg-white rounded-full" />
+  <span className="w-7 h-[2px] bg-white rounded-full" />
+  <span className="w-7 h-[2px] bg-white rounded-full" />
+
+</button>
 
         <button onClick={() => scrollToSection("products")}>
           Products
@@ -100,7 +111,7 @@ return (
 
       </div>
 
-      <div className="flex gap-3">
+      <div className="hidden md:flex gap-3">
 
       <button
   onClick={() => setShowCRM(true)}
@@ -133,6 +144,72 @@ return (
 </div>
 
 </div>
+
+{mobileMenu && (
+
+  <motion.div
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    className="md:hidden absolute top-full left-0 right-0 border-b border-white/10 bg-black/95 backdrop-blur-2xl"
+  >
+
+    <div className="flex flex-col p-6 gap-5">
+
+      <button
+        onClick={() => {
+          scrollToSection("products");
+          setMobileMenu(false);
+        }}
+        className="text-left text-white text-lg"
+      >
+        Products
+      </button>
+
+      <button
+        onClick={() => {
+          scrollToSection("runtime");
+          setMobileMenu(false);
+        }}
+        className="text-left text-white text-lg"
+      >
+        Runtime
+      </button>
+
+      <button
+        onClick={() => {
+          scrollToSection("industries");
+          setMobileMenu(false);
+        }}
+        className="text-left text-white text-lg"
+      >
+        Industries
+      </button>
+
+      <button
+        onClick={() => {
+          setShowCRM(true);
+          setMobileMenu(false);
+        }}
+        className="mt-4 px-5 py-4 rounded-2xl bg-cyan-400 text-black font-black"
+      >
+        Open CRM
+      </button>
+
+      <a
+        href="https://wa.me/919177334156?text=Hello%20PhantomOps%20AI%2C%20I%20want%20to%20book%20a%20consultation."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-5 py-4 rounded-2xl bg-white text-black font-black text-center"
+      >
+        Book Consultation
+      </a>
+
+    </div>
+
+  </motion.div>
+
+)}
 
 </nav>
 {/* HERO */}
