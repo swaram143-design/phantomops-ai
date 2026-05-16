@@ -3,6 +3,14 @@ import { motion } from "framer-motion";
 
 export default function App() {
 const [showCRM, setShowCRM] = useState(false);
+const [showLeadModal, setShowLeadModal] = useState(false);
+
+const [leadData, setLeadData] = useState({
+  name: "",
+  email: "",
+  company: "",
+  requirement: "",
+});
 const [mobileMenu, setMobileMenu] = useState(false);
 
 const [proposalGenerated, setProposalGenerated] = useState(false);
@@ -276,6 +284,7 @@ return (
 </motion.button>
 
          <motion.button
+  onClick={() => setShowLeadModal(true)}
   whileHover={{ scale: 1.03 }}
   whileTap={{ scale: 0.97 }}
   onClick={() => scrollToSection("products")}
@@ -1038,7 +1047,139 @@ return (
     </div>
 
   </footer>
+{/* LEAD CAPTURE MODAL */}
 
+{showLeadModal && (
+
+  <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
+
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="relative w-full max-w-2xl rounded-[36px] border border-cyan-500/20 bg-[#071018] p-10 backdrop-blur-2xl shadow-[0_0_80px_rgba(34,211,238,0.15)]"
+    >
+
+      <button
+        onClick={() => setShowLeadModal(false)}
+        className="absolute top-5 right-5 text-zinc-500 hover:text-white"
+      >
+        ✕
+      </button>
+
+      <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-5">
+        Enterprise Automation Access
+      </p>
+
+      <h2 className="text-5xl font-black leading-tight mb-6">
+
+        Start Your
+        <span className="block text-zinc-500">
+          AI Infrastructure
+        </span>
+
+      </h2>
+
+      <p className="text-zinc-400 text-lg leading-relaxed mb-10">
+
+        Submit your operational requirements to activate autonomous AI deployment planning.
+
+      </p>
+
+      <div className="space-y-5">
+
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={leadData.name}
+          onChange={(e) =>
+            setLeadData({
+              ...leadData,
+              name: e.target.value,
+            })
+          }
+          className="w-full rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-white outline-none focus:border-cyan-400/40"
+        />
+
+        <input
+          type="email"
+          placeholder="Email Address"
+          value={leadData.email}
+          onChange={(e) =>
+            setLeadData({
+              ...leadData,
+              email: e.target.value,
+            })
+          }
+          className="w-full rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-white outline-none focus:border-cyan-400/40"
+        />
+
+        <input
+          type="text"
+          placeholder="Company"
+          value={leadData.company}
+          onChange={(e) =>
+            setLeadData({
+              ...leadData,
+              company: e.target.value,
+            })
+          }
+          className="w-full rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-white outline-none focus:border-cyan-400/40"
+        />
+
+        <textarea
+          placeholder="Describe your automation requirements..."
+          rows="5"
+          value={leadData.requirement}
+          onChange={(e) =>
+            setLeadData({
+              ...leadData,
+              requirement: e.target.value,
+            })
+          }
+          className="w-full rounded-2xl border border-white/10 bg-black/30 px-6 py-5 text-white outline-none resize-none focus:border-cyan-400/40"
+        />
+
+        <button
+          onClick={() => {
+
+  const message = `Hello PhantomOps AI,
+
+Name: ${leadData.name}
+Email: ${leadData.email}
+Company: ${leadData.company}
+
+Requirement:
+${leadData.requirement}
+
+I want to activate AI infrastructure deployment.`;
+
+  window.open(
+    `https://wa.me/919177334156?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
+
+  setShowLeadModal(false);
+
+}}
+          className="group relative overflow-hidden w-full rounded-2xl bg-cyan-400 px-8 py-5 text-black font-black hover:scale-[1.02] transition-all duration-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.35)]"
+        >
+
+          <span className="relative z-10">
+            Activate AI Deployment
+          </span>
+
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
+
+        </button>
+
+      </div>
+
+    </motion.div>
+
+  </div>
+
+)}
 {/* CRM MODAL */}
 {showCRM && (
 
