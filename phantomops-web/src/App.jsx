@@ -17,6 +17,25 @@ const [proposalGenerated, setProposalGenerated] = useState(false);
 
 const [proposalLoading, setProposalLoading] = useState(false);
 
+const [loadingStep, setLoadingStep] = useState(
+  "Initializing runtime..."
+);
+
+const runtimeEvents = [
+  "✓ Enterprise proposal generated successfully",
+  "✓ AI outreach pipeline launched",
+  "✓ Marketplace signal detected",
+  "✓ Revenue analytics synchronized",
+  "✓ CRM followup automation scheduled",
+  "✓ WhatsApp campaign deployed",
+  "✓ Lead score increased to 94%",
+  "✓ Autonomous runtime stabilized",
+  "✓ Multi-agent orchestration completed",
+  "✓ Healthcare diagnostics runtime active",
+];
+
+const [liveEvent, setLiveEvent] = useState(runtimeEvents[0]);
+
 const [proposalData, setProposalData] = useState({
   company: "",
   requirement: "",
@@ -64,16 +83,42 @@ if (proposalSection) {
 
 }
 
-  setTimeout(() => {
+  setLoadingStep("Initializing runtime...");
 
-    setProposalLoading(false);
+setTimeout(() => {
+  setLoadingStep("Analyzing infrastructure requirements...");
+}, 700);
 
-    setProposalGenerated(true);
+setTimeout(() => {
+  setLoadingStep("Building autonomous deployment plan...");
+}, 1400);
 
-  }, 2200);
+setTimeout(() => {
+
+  setProposalLoading(false);
+
+  setProposalGenerated(true);
+
+}, 2400);
 
 };
 
+useEffect(() => {
+
+  const interval = setInterval(() => {
+
+    const randomEvent =
+      runtimeEvents[
+        Math.floor(Math.random() * runtimeEvents.length)
+      ];
+
+    setLiveEvent(randomEvent);
+
+  }, 2500);
+
+  return () => clearInterval(interval);
+
+}, []);
 const scrollToSection = (id) => {
 
   const element = document.getElementById(id);
@@ -347,9 +392,19 @@ return (
 
       <div className="relative z-10">
 
-        <h3 className="text-4xl font-black text-cyan-400">
-          {item[0]}
-        </h3>
+        <motion.h3
+  initial={{ opacity: 0, y: 20 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{
+    duration: 0.6,
+    delay: index * 0.1,
+  }}
+  className="text-4xl font-black text-cyan-400"
+>
+
+  {item[0]}
+
+</motion.h3>
 
         <p className="text-zinc-400 text-sm mt-3">
           {item[1]}
@@ -634,8 +689,8 @@ return (
               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
 
               <p className="text-zinc-300">
-                {item}
-              </p>
+  {index === 0 ? liveEvent : item}
+</p>
 
             </motion.div>
 
@@ -660,9 +715,16 @@ return (
               Runtime Uptime
             </p>
 
-            <h3 className="text-6xl font-black mt-4">
-              847h
-            </h3>
+            <motion.h3
+  initial={{ opacity: 0, scale: 0.8 }}
+  whileInView={{ opacity: 1, scale: 1 }}
+  transition={{ duration: 0.5 }}
+  className="text-6xl font-black mt-4"
+>
+
+  847h
+
+</motion.h3>
 
             <p className="text-cyan-300 mt-4">
               Continuous autonomous runtime
@@ -897,7 +959,7 @@ return (
     <div className="w-16 h-16 rounded-full border-4 border-cyan-400/20 border-t-cyan-400 animate-spin mb-8" />
 
     <p className="text-cyan-300 text-xl font-semibold mb-4">
-      Analyzing Runtime Infrastructure...
+      {loadingStep}
     </p>
 
     <div className="space-y-3 text-sm text-zinc-500 text-center">
