@@ -1,5 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React, {
+  useState,
+  useEffect,
+  lazy,
+  Suspense,
+} from "react";
+const motionModule = lazy(() =>
+  import("framer-motion").then((mod) => ({
+    default: mod.motion,
+  }))
+);
+import { supabase } from "./supabase";
 
 export default function App() {
 const [showCRM, setShowCRM] = useState(false);
@@ -134,6 +144,8 @@ const scrollToSection = (id) => {
 };
 
 return (
+
+<Suspense fallback={null}>
 <div className="relative min-h-screen bg-[#02040a] text-white overflow-x-hidden">
 {/* AMBIENT BACKGROUND */}
 
@@ -201,33 +213,34 @@ return (
 
       <div className="hidden md:flex gap-3">
 
-      <button
-  onClick={() => setShowCRM(true)}
-  className="group relative overflow-hidden px-5 py-3 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/20 hover:scale-[1.03] transition-all duration-300 hover:shadow-[0_0_35px_rgba(34,211,238,0.35)]"
->
 
-  <span className="relative z-10">
-    Open CRM
-  </span>
+  <button
+    onClick={() => setShowCRM(true)}
+    className="group relative overflow-hidden px-5 py-3 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 hover:bg-cyan-400/20 hover:scale-[1.03] transition-all duration-300 hover:shadow-[0_0_35px_rgba(34,211,238,0.35)]"
+  >
 
-  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.45),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
+    <span className="relative z-10">
+      Open CRM
+    </span>
 
-</button>
+    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.45),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
 
-      <a
-  href="https://wa.me/919177334156?text=Hello%20PhantomOps%20AI%2C%20I%20want%20to%20book%20a%20consultation."
-  target="_blank"
-  rel="noopener noreferrer"
-  className="group relative overflow-hidden px-5 py-3 rounded-2xl bg-white text-black font-bold hover:scale-[1.03] transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)]"
->
+  </button>
 
-  <span className="relative z-10">
-    Book Consultation
-  </span>
+  <a
+    href="https://wa.me/919177334156?text=Hello%20PhantomOps%20AI%2C%20I%20want%20to%20book%20a%20consultation."
+    target="_blank"
+    rel="noopener noreferrer"
+    className="group relative overflow-hidden px-5 py-3 rounded-2xl bg-white text-black font-bold hover:scale-[1.03] transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)]"
+  >
 
-  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.5),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
+    <span className="relative z-10">
+      Book Consultation
+    </span>
 
-</a>
+    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.5),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
+
+  </a>
 
 </div>
 
@@ -235,7 +248,7 @@ return (
 
 {mobileMenu && (
 
-  <motion.div
+  <motionModule.div
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -20 }}
@@ -295,7 +308,7 @@ return (
 
     </div>
 
-  </motion.div>
+  </motionModule.div>
 
 )}
 
@@ -338,7 +351,7 @@ return (
         </p>
 
         <div className="flex flex-wrap gap-5 mt-14">
-<motion.button
+<motionModule.button
   whileHover={{ scale: 1.03 }}
   whileTap={{ scale: 0.97 }}
   className="group relative overflow-hidden px-8 py-5 rounded-3xl bg-cyan-400 text-black font-black shadow-[0_0_60px_rgba(34,211,238,0.35)] hover:shadow-[0_0_90px_rgba(34,211,238,0.55)] transition-all duration-300"
@@ -350,10 +363,9 @@ return (
 
   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
 
-</motion.button>
+</motionModule.button>
 
-         <motion.button
-  onClick={() => setShowLeadModal(true)}
+         <motionModule.button
   whileHover={{ scale: 1.03 }}
   whileTap={{ scale: 0.97 }}
   onClick={() => scrollToSection("products")}
@@ -366,7 +378,7 @@ return (
 
   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
 
-</motion.button>
+</motionModule.button>
 
         </div>
 
@@ -381,7 +393,7 @@ return (
     ["400+", "Marketplace Sources"],
   ].map((item, index) => (
 
-    <motion.div
+   <motionModule.div
       key={index}
       whileHover={{ y: -6 }}
       transition={{ duration: 0.2 }}
@@ -392,7 +404,7 @@ return (
 
       <div className="relative z-10">
 
-        <motion.h3
+       <motionModule.h3
   initial={{ opacity: 0, y: 20 }}
   whileInView={{ opacity: 1, y: 0 }}
   transition={{
@@ -403,8 +415,7 @@ return (
 >
 
   {item[0]}
-
-</motion.h3>
+</motionModule.h3>
 
         <p className="text-zinc-400 text-sm mt-3">
           {item[1]}
@@ -412,14 +423,14 @@ return (
 
       </div>
 
-    </motion.div>
+    </motionModule.div>
 
   ))}
 
 </div>
 
       {/* TERMINAL */}
-      <motion.div
+     <motionModule.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
@@ -461,7 +472,7 @@ return (
 
         </div>
 
-      </motion.div>
+      </motionModule.div>
 
      </div>
 
@@ -555,7 +566,7 @@ return (
           },
         ].map((item, index) => (
 
-          <motion.div
+          <motionModule.div
             key={index}
             whileHover={{
   y: -8,
@@ -613,7 +624,7 @@ return (
 
 </div>
 
-          </motion.div>
+          </motionModule.div>
 
         ))}
 
@@ -675,7 +686,7 @@ return (
             "✓ Autonomous runtime stabilized",
           ].map((item, index) => (
 
-            <motion.div
+            <motionModule.div
               key={index}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -692,7 +703,7 @@ return (
   {index === 0 ? liveEvent : item}
 </p>
 
-            </motion.div>
+            </motionModule.div>
 
           ))}
 
@@ -702,7 +713,7 @@ return (
 
       <div className="grid gap-6">
 
-        <motion.div
+        <motionModule.div
           whileHover={{ y: -5 }}
           className="relative overflow-hidden rounded-[36px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-transparent p-8 backdrop-blur-2xl"
         >
@@ -715,7 +726,7 @@ return (
               Runtime Uptime
             </p>
 
-            <motion.h3
+            <motionModule.h3
   initial={{ opacity: 0, scale: 0.8 }}
   whileInView={{ opacity: 1, scale: 1 }}
   transition={{ duration: 0.5 }}
@@ -724,7 +735,7 @@ return (
 
   847h
 
-</motion.h3>
+</motionModule.h3>
 
             <p className="text-cyan-300 mt-4">
               Continuous autonomous runtime
@@ -732,9 +743,9 @@ return (
 
           </div>
 
-        </motion.div>
+        </motionModule.div>
 
-        <motion.div
+        <motionModule.div
           whileHover={{ y: -5 }}
           className="relative overflow-hidden rounded-[36px] border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-transparent p-8 backdrop-blur-2xl"
         >
@@ -755,9 +766,9 @@ return (
 
           </div>
 
-        </motion.div>
+        </motionModule.div>
 
-        <motion.div
+     <motionModule.div
           whileHover={{ y: -5 }}
           className="relative overflow-hidden rounded-[36px] border border-green-500/20 bg-gradient-to-br from-green-500/10 to-transparent p-8 backdrop-blur-2xl"
         >
@@ -778,7 +789,7 @@ return (
 
           </div>
 
-        </motion.div>
+        </motionModule.div>
 
       </div>
 
@@ -1311,7 +1322,7 @@ return (
 
   <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
 
-    <motion.div
+    <motionModule.div
       initial={{ opacity: 0, scale: 0.95, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -1399,41 +1410,49 @@ return (
         />
 
         <button
-          onClick={() => {
+  onClick={async () => {
 
-  const message = `Hello PhantomOps AI,
+    await supabase.from("leads").insert([
+      {
+        name: leadData.name,
+        email: leadData.email,
+        company: leadData.company,
+        requirement: leadData.requirement,
+      },
+    ]);
 
-Name: ${leadData.name}
-Email: ${leadData.email}
-Company: ${leadData.company}
+    const message =
+      "Hello PhantomOps AI,%0A%0A" +
+      "Name: " + leadData.name + "%0A" +
+      "Email: " + leadData.email + "%0A" +
+      "Company: " + leadData.company + "%0A%0A" +
+      "Requirement:%0A" +
+      leadData.requirement +
+      "%0A%0A" +
+      "I want to activate AI infrastructure deployment.";
 
-Requirement:
-${leadData.requirement}
+    window.open(
+      "https://wa.me/919177334156?text=" + message,
+      "_blank"
+    );
 
-I want to activate AI infrastructure deployment.`;
+    setShowLeadModal(false);
 
-  window.open(
-    `https://wa.me/919177334156?text=${encodeURIComponent(message)}`,
-    "_blank"
-  );
+  }}
+  className="group relative overflow-hidden w-full rounded-2xl bg-cyan-400 px-8 py-5 text-black font-black hover:scale-[1.02] transition-all duration-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.35)]"
+>
 
-  setShowLeadModal(false);
+  <span className="relative z-10">
+    Activate AI Deployment
+  </span>
 
-}}
-          className="group relative overflow-hidden w-full rounded-2xl bg-cyan-400 px-8 py-5 text-black font-black hover:scale-[1.02] transition-all duration-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.35)]"
-        >
+  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
 
-          <span className="relative z-10">
-            Activate AI Deployment
-          </span>
-
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
-
-        </button>
-
+</button>
+          
       </div>
 
-    </motion.div>
+    </motionModule.div>
 
   </div>
 
@@ -1443,7 +1462,7 @@ I want to activate AI infrastructure deployment.`;
 
   <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
 
-    <motion.div
+    <motionModule.div
       initial={{ opacity: 0, scale: 0.95, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -1552,13 +1571,15 @@ I want to activate AI infrastructure deployment.`;
 
       </div>
 
-    </motion.div>
+    </motionModule.div>
 
   </div>
 
 )}
 
 </div>
+
+</Suspense>
 
 );
 }
