@@ -29,11 +29,29 @@ const triggerProposal = (system) => {
 
   setProposalGenerated(false);
 
-  setProposalData({
-    company: system,
-    requirement: "Autonomous AI Infrastructure",
-    budget: "$50k - $100k",
-  });
+ let requirement = "Autonomous AI Infrastructure";
+
+if (system === "PhantomOps CRM Intelligence") {
+  requirement = "CRM Analytics & Revenue Automation";
+}
+
+if (system === "MediOps AI") {
+  requirement = "Hospital AI Workflow Infrastructure";
+}
+
+if (system === "Outreach AI") {
+  requirement = "AI Outreach & Marketplace Automation";
+}
+
+if (system === "GRAM Runtime") {
+  requirement = "Multi-Agent Runtime Orchestration";
+}
+
+setProposalData({
+  company: system,
+  requirement,
+  budget: "$50k - $100k",
+});
 
   window.scrollTo({
     top: document.body.scrollHeight - 1200,
@@ -909,21 +927,73 @@ return (
 
               </div>
 
-              <div className="grid gap-4">
+             <div className="grid gap-4">
 
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
-                  ✓ MediOps AI Deployment Recommended
-                </div>
+  {proposalData.company === "PhantomOps CRM Intelligence" && (
+    <>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ AI Lead Scoring Infrastructure Activated
+      </div>
 
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
-                  ✓ CRM Intelligence Runtime Activated
-                </div>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Revenue Intelligence Runtime Connected
+      </div>
 
-                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
-                  ✓ Outreach AI Infrastructure Connected
-                </div>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Autonomous CRM Followup System Enabled
+      </div>
+    </>
+  )}
 
-              </div>
+  {proposalData.company === "MediOps AI" && (
+    <>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Patient Workflow Automation Enabled
+      </div>
+
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Diagnostics Intelligence Runtime Connected
+      </div>
+
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Hospital Administration AI Activated
+      </div>
+    </>
+  )}
+
+  {proposalData.company === "Outreach AI" && (
+    <>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Marketplace Intelligence Runtime Enabled
+      </div>
+
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ AI Outreach Pipeline Connected
+      </div>
+
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ WhatsApp Automation Infrastructure Active
+      </div>
+    </>
+  )}
+
+  {proposalData.company === "GRAM Runtime" && (
+    <>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Multi-Agent Hierarchy Initialized
+      </div>
+
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Autonomous Runtime Orchestration Active
+      </div>
+
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-5">
+        ✓ Operational Intelligence Infrastructure Connected
+      </div>
+    </>
+  )}
+
+</div>
 
               <div className="grid grid-cols-2 gap-5">
 
