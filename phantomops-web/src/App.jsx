@@ -1,14 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  lazy,
-  Suspense,
-} from "react";
-const motionModule = lazy(() =>
-  import("framer-motion").then((mod) => ({
-    default: mod.motion,
-  }))
-);
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "./supabase";
 
 export default function App() {
@@ -145,7 +136,6 @@ const scrollToSection = (id) => {
 
 return (
 
-<Suspense fallback={null}>
 <div className="relative min-h-screen bg-[#02040a] text-white overflow-x-hidden">
 {/* AMBIENT BACKGROUND */}
 
@@ -248,7 +238,7 @@ return (
 
 {mobileMenu && (
 
-  <motionModule.div
+  <motion.div
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -20 }}
@@ -308,7 +298,7 @@ return (
 
     </div>
 
-  </motionModule.div>
+  </motion.div>
 
 )}
 
@@ -351,7 +341,7 @@ return (
         </p>
 
         <div className="flex flex-wrap gap-5 mt-14">
-<motionModule.button
+<motion.button
   whileHover={{ scale: 1.03 }}
   whileTap={{ scale: 0.97 }}
   className="group relative overflow-hidden px-8 py-5 rounded-3xl bg-cyan-400 text-black font-black shadow-[0_0_60px_rgba(34,211,238,0.35)] hover:shadow-[0_0_90px_rgba(34,211,238,0.55)] transition-all duration-300"
@@ -363,9 +353,9 @@ return (
 
   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
 
-</motionModule.button>
+</motion.button>
 
-         <motionModule.button
+         <motion.button
   whileHover={{ scale: 1.03 }}
   whileTap={{ scale: 0.97 }}
   onClick={() => scrollToSection("products")}
@@ -378,7 +368,7 @@ return (
 
   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
 
-</motionModule.button>
+</motion.button>
 
         </div>
 
@@ -393,7 +383,7 @@ return (
     ["400+", "Marketplace Sources"],
   ].map((item, index) => (
 
-   <motionModule.div
+   <motion.div
       key={index}
       whileHover={{ y: -6 }}
       transition={{ duration: 0.2 }}
@@ -404,7 +394,7 @@ return (
 
       <div className="relative z-10">
 
-       <motionModule.h3
+       <motion.h3
   initial={{ opacity: 0, y: 20 }}
   whileInView={{ opacity: 1, y: 0 }}
   transition={{
@@ -415,7 +405,7 @@ return (
 >
 
   {item[0]}
-</motionModule.h3>
+</motion.h3>
 
         <p className="text-zinc-400 text-sm mt-3">
           {item[1]}
@@ -423,14 +413,14 @@ return (
 
       </div>
 
-    </motionModule.div>
+    </motion.div>
 
   ))}
 
 </div>
 
       {/* TERMINAL */}
-     <motionModule.div
+     <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
@@ -472,7 +462,7 @@ return (
 
         </div>
 
-      </motionModule.div>
+      </motion.div>
 
      </div>
 
@@ -566,7 +556,7 @@ return (
           },
         ].map((item, index) => (
 
-          <motionModule.div
+          <motion.div
             key={index}
             whileHover={{
   y: -8,
@@ -624,7 +614,7 @@ return (
 
 </div>
 
-          </motionModule.div>
+          </motion.div>
 
         ))}
 
@@ -686,7 +676,7 @@ return (
             "✓ Autonomous runtime stabilized",
           ].map((item, index) => (
 
-            <motionModule.div
+            <motion.div
               key={index}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -703,7 +693,7 @@ return (
   {index === 0 ? liveEvent : item}
 </p>
 
-            </motionModule.div>
+            </motion.div>
 
           ))}
 
@@ -713,7 +703,7 @@ return (
 
       <div className="grid gap-6">
 
-        <motionModule.div
+        <motion.div
           whileHover={{ y: -5 }}
           className="relative overflow-hidden rounded-[36px] border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-transparent p-8 backdrop-blur-2xl"
         >
@@ -726,7 +716,7 @@ return (
               Runtime Uptime
             </p>
 
-            <motionModule.h3
+            <motion.h3
   initial={{ opacity: 0, scale: 0.8 }}
   whileInView={{ opacity: 1, scale: 1 }}
   transition={{ duration: 0.5 }}
@@ -735,7 +725,7 @@ return (
 
   847h
 
-</motionModule.h3>
+</motion.h3>
 
             <p className="text-cyan-300 mt-4">
               Continuous autonomous runtime
@@ -743,9 +733,9 @@ return (
 
           </div>
 
-        </motionModule.div>
+        </motion.div>
 
-        <motionModule.div
+        <motion.div
           whileHover={{ y: -5 }}
           className="relative overflow-hidden rounded-[36px] border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-transparent p-8 backdrop-blur-2xl"
         >
@@ -766,9 +756,9 @@ return (
 
           </div>
 
-        </motionModule.div>
+        </motion.div>
 
-     <motionModule.div
+     <motion.div
           whileHover={{ y: -5 }}
           className="relative overflow-hidden rounded-[36px] border border-green-500/20 bg-gradient-to-br from-green-500/10 to-transparent p-8 backdrop-blur-2xl"
         >
@@ -789,7 +779,7 @@ return (
 
           </div>
 
-        </motionModule.div>
+        </motion.div>
 
       </div>
 
@@ -1322,7 +1312,7 @@ return (
 
   <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
 
-    <motionModule.div
+    <motion.div
       initial={{ opacity: 0, scale: 0.95, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -1452,7 +1442,7 @@ return (
           
       </div>
 
-    </motionModule.div>
+    </motion.div>
 
   </div>
 
@@ -1462,7 +1452,7 @@ return (
 
   <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6">
 
-    <motionModule.div
+    <motion.div
       initial={{ opacity: 0, scale: 0.95, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -1571,15 +1561,12 @@ return (
 
       </div>
 
-    </motionModule.div>
+    </motion.div>
 
   </div>
 
 )}
-
 </div>
-
-</Suspense>
 
 );
 }
