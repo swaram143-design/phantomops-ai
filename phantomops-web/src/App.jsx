@@ -53,10 +53,16 @@ setProposalData({
   budget: "$50k - $100k",
 });
 
-  window.scrollTo({
-    top: document.body.scrollHeight - 1200,
+  const proposalSection = document.getElementById("proposal-runtime");
+
+if (proposalSection) {
+
+  proposalSection.scrollIntoView({
     behavior: "smooth",
+    block: "start",
   });
+
+}
 
   setTimeout(() => {
 
@@ -762,7 +768,10 @@ return (
 
 {/* AI PROPOSAL GENERATOR */}
 
-<section className="relative z-10 px-6 py-32">
+<section
+  id="proposal-runtime"
+  className="relative z-10 px-6 py-32"
+>
 
   <div className="max-w-7xl mx-auto">
 
