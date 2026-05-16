@@ -1024,29 +1024,146 @@ return (
   </section>
 
   {/* FOOTER */}
-  <footer className="relative z-10 border-t border-white/10 px-6 py-12">
 
-    <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8">
+<footer className="relative z-10 border-t border-white/10 py-20 px-6 overflow-hidden">
+
+  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.08),transparent_60%)]" />
+
+  <div className="relative z-10 max-w-7xl mx-auto">
+
+    <div className="grid lg:grid-cols-4 gap-14 mb-16">
+
+      {/* BRAND */}
 
       <div>
 
-        <h2 className="text-3xl font-black">
+        <h2 className="text-3xl font-black mb-5">
           PhantomOpsAI
         </h2>
 
-        <p className="text-zinc-500 mt-3">
-          Autonomous AI Operations Infrastructure
+        <p className="text-zinc-400 leading-relaxed mb-6">
+
+          Autonomous AI operations infrastructure powering intelligent business automation, outreach systems, healthcare runtimes, and enterprise orchestration.
+
         </p>
+
+        <div className="inline-flex items-center gap-3 px-5 py-3 rounded-full border border-green-500/20 bg-green-500/10 text-green-300 text-sm animate-pulse">
+
+          <div className="w-2 h-2 rounded-full bg-green-400" />
+
+          Runtime Infrastructure Active
+
+        </div>
 
       </div>
 
-      <div className="text-zinc-500">
-        © 2026 PhantomOps AI. All rights reserved.
+      {/* SYSTEMS */}
+
+      <div>
+
+        <h3 className="text-white font-bold mb-6 uppercase tracking-[0.2em] text-sm">
+          Systems
+        </h3>
+
+        <div className="space-y-4 text-zinc-400">
+
+          <p>PhantomOps CRM</p>
+          <p>MediOps AI</p>
+          <p>Outreach Runtime</p>
+          <p>GRAM Infrastructure</p>
+          <p>Proposal Intelligence</p>
+
+        </div>
+
+      </div>
+
+      {/* INDUSTRIES */}
+
+      <div>
+
+        <h3 className="text-white font-bold mb-6 uppercase tracking-[0.2em] text-sm">
+          Industries
+        </h3>
+
+        <div className="space-y-4 text-zinc-400">
+
+          <p>Healthcare</p>
+          <p>SaaS</p>
+          <p>Enterprise Automation</p>
+          <p>Agencies</p>
+          <p>Education</p>
+
+        </div>
+
+      </div>
+
+      {/* CONTACT */}
+
+      <div>
+
+        <h3 className="text-white font-bold mb-6 uppercase tracking-[0.2em] text-sm">
+          Contact Runtime
+        </h3>
+
+        <div className="space-y-5">
+
+          <a
+            href="https://wa.me/919177334156"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-zinc-300 hover:text-cyan-400 transition-all"
+          >
+            WhatsApp Consultation
+          </a>
+
+          <a
+            href="mailto:phantomopsai@gmail.com"
+            className="block text-zinc-300 hover:text-cyan-400 transition-all"
+          >
+            phantomopsai@gmail.com
+          </a>
+
+          <p className="text-zinc-500 text-sm leading-relaxed">
+
+            Autonomous AI infrastructure runtime operating continuously across CRM intelligence, outreach automation, and enterprise orchestration systems.
+
+          </p>
+
+        </div>
+
       </div>
 
     </div>
 
-  </footer>
+    {/* BOTTOM */}
+
+    <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/10 pt-8">
+
+      <div>
+
+        <p className="text-zinc-500 text-sm">
+
+          © 2026 PhantomOps AI. Autonomous Infrastructure Runtime.
+
+        </p>
+
+      </div>
+
+      <div className="flex items-center gap-6 text-sm text-zinc-500">
+
+        <span>GRAM Runtime v1.0.0</span>
+
+        <span className="text-cyan-400">
+          24/7 Operational
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</footer>
 {/* LEAD CAPTURE MODAL */}
 
 {showLeadModal && (
