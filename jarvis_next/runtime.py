@@ -1,3 +1,4 @@
+import json
 from .state import StateStore
 from .permissions import PermissionEngine
 from .planner import MissionPlanner
@@ -9,20 +10,23 @@ class JarvisRuntime:
   results=[]
   for i,step in enumerate(plan["steps"][start_index:],start=start_index):
    d=self.permissions.check(step["action"])
-   if d.requires_approval:
+   if d.requires_approval and i != approved_step:
     aid=approval_id or self.state.approval(mid,step["action"],{"step_index":i,"step":step,"context":ctx})
     self.state.update(mid,"awaiting_approval",plan=plan,result=results)
     return {"mission_id":mid,"status":"awaiting_approval","approval_id":aid,"step":step,"step_index":i,"results":results}
-   if not d.allowed:
-    results.append({"status":"blocked","reason":d.reason,"step":step,"step_index":i});continue
+   if not d.allowed and i != approved_step:
+    results.append({"status":"blocked","reason":d.reason,"step":step,"step_index":i})
+    continue
    ws=self.workers.find(step["capability"]) if self.workers else []
    if not ws:
-    results.append({"status":"blocked","reason":"no worker","step":step,"step_index":i});continue
+    results.append({"status":"blocked","reason":"no worker","step":step,"step_index":i})
+    continue
    r=await ws[0].run({"goal":goal,"step":step,**ctx})
    item={"status":"completed" if r.ok else "failed","worker":ws[0].name,"data":r.data,"error":r.error,"step":step,"step_index":i}
    results.append(item)
    if not r.ok:
-    self.state.update(mid,"failed",plan=plan,result=results);return {"mission_id":mid,"status":"failed","results":results}
+    self.state.update(mid,"failed",plan=plan,result=results)
+    return {"mission_id":mid,"status":"failed","results":results}
    if isinstance(r.data,dict):ctx.update(r.data)
   status="completed" if not any(x["status"] in ("blocked","failed") for x in results) else "blocked"
   self.state.update(mid,status,plan=plan,result={"results":results,"context":ctx})
