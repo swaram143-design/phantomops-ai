@@ -1,15 +1,43 @@
 from .state import StateStore
 from .permissions import PermissionEngine
 from .planner import MissionPlanner
+
 class JarvisRuntime:
- def __init__(self,state=None,workers=None,permissions=None):self.state=state or StateStore();self.workers=workers;self.permissions=permissions or PermissionEngine()
- async def submit(self,goal,context=None):
-  mid=self.state.create_mission(goal);plan=MissionPlanner().plan(goal);self.state.update(mid,"planning",plan=plan);results=[];ctx=context or {}
-  for step in plan["steps"]:
+ def __init__(self,state=None,workers=None,permissions=None):
+  self.state=state or StateStore();self.workers=workers;self.permissions=permissions or PermissionEngine()
+ async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None):
+  results=[]
+  for i,step in enumerate(plan["steps"][start_index:],start=start_index):
    d=self.permissions.check(step["action"])
-   if d.requires_approval:results.append({"status":"awaiting_approval","approval_id":self.state.approval(mid,step["action"],{**step,**ctx}),"step":step});continue
+   if d.requires_approval:
+    aid=approval_id or self.state.approval(mid,step["action"],{"step_index":i,"step":step,"context":ctx})
+    self.state.update(mid,"awaiting_approval",plan=plan,result=results)
+    return {"mission_id":mid,"status":"awaiting_approval","approval_id":aid,"step":step,"step_index":i,"results":results}
+   if not d.allowed:
+    results.append({"status":"blocked","reason":d.reason,"step":step,"step_index":i});continue
    ws=self.workers.find(step["capability"]) if self.workers else []
-   if not ws:results.append({"status":"blocked","reason":"no worker","step":step});continue
-   r=await ws[0].run({"goal":goal,"step":step,**ctx});results.append({"status":"completed" if r.ok else "failed","worker":ws[0].name,"data":r.data,"error":r.error});
-   if r.ok and isinstance(r.data,dict):ctx.update(r.data)
-  status="awaiting_approval" if any(x["status"]=="awaiting_approval" for x in results) else ("blocked" if any(x["status"]=="blocked" for x in results) else ("failed" if any(x["status"]=="failed" for x in results) else "completed"));self.state.update(mid,status,result=results);return {"mission_id":mid,"status":status,"plan":plan,"results":results}
+   if not ws:
+    results.append({"status":"blocked","reason":"no worker","step":step,"step_index":i});continue
+   r=await ws[0].run({"goal":goal,"step":step,**ctx})
+   item={"status":"completed" if r.ok else "failed","worker":ws[0].name,"data":r.data,"error":r.error,"step":step,"step_index":i}
+   results.append(item)
+   if not r.ok:
+    self.state.update(mid,"failed",plan=plan,result=results);return {"mission_id":mid,"status":"failed","results":results}
+   if isinstance(r.data,dict):ctx.update(r.data)
+  status="completed" if not any(x["status"] in ("blocked","failed") for x in results) else "blocked"
+  self.state.update(mid,status,plan=plan,result={"results":results,"context":ctx})
+  return {"mission_id":mid,"status":status,"results":results,"context":ctx}
+ async def submit(self,goal,context=None):
+  mid=self.state.create_mission(goal);plan=MissionPlanner().plan(goal);self.state.update(mid,"running",plan=plan)
+  return await self._run(mid,goal,plan,context or {},0)
+ async def resume(self,approval_id,approved=True):
+  a=self.state.get_approval(approval_id)
+  if not a: raise KeyError(approval_id)
+  if a["status"]!="pending": return {"mission_id":a["mission_id"],"status":a["status"],"approval_id":approval_id}
+  self.state.resolve_approval(approval_id,"approved" if approved else "rejected")
+  mid=a["mission_id"];m=self.state.get_mission(mid)
+  payload=json.loads(a["payload"]);plan=json.loads(m["plan"]);ctx=payload.get("context",{})
+  if not approved:
+   result={"mission_id":mid,"status":"rejected","approval_id":approval_id}
+   self.state.update(mid,"rejected",plan=plan,result=result);return result
+  return await self._run(mid,m["goal"],plan,ctx,payload["step_index"]+1)
