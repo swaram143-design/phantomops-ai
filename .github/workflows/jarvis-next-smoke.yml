@@ -24,3 +24,5 @@ jobs:
         run: python -m jarvis_next.nexus_contract_test
       - name: Run revenue chain contract test
         run: python -m jarvis_next.revenue_chain_test
+      - name: Run planner policy test
+        run: python -m jarvis_next.planner_policy_test
