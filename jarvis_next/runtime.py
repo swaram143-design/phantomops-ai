@@ -28,6 +28,7 @@ class JarvisRuntime:
     self.state.update(mid,"failed",plan=plan,result=results)
     return {"mission_id":mid,"status":"failed","results":results}
    if isinstance(r.data,dict):ctx.update(r.data)
+   self.state.event("step.completed",{"step_index":i,"capability":step["capability"],"ok":r.ok},mid)
   status="completed" if not any(x["status"] in ("blocked","failed") for x in results) else "blocked"
   self.state.update(mid,status,plan=plan,result={"results":results,"context":ctx})
   return {"mission_id":mid,"status":status,"results":results,"context":ctx}
