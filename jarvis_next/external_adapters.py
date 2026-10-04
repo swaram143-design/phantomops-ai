@@ -1,15 +1,29 @@
 import asyncio,os,shutil
 from .adapters import Worker,WorkerResult
-class CommandWorker(Worker):
- def __init__(self,name,capabilities,command):self.name=name;self.capabilities=set(capabilities);self.command=command
+
+class BrowserWorker(Worker):
+ name="browser";capabilities={"browser_read","research_online"}
  async def run(self,task):
-  if not shutil.which(self.command):return WorkerResult(False,error=f"{self.command} not installed")
-  p=await asyncio.create_subprocess_exec(self.command,*self.args(task),stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
-  out,err=await p.communicate();return WorkerResult(p.returncode==0,out.decode(errors="replace")[-12000:],err.decode(errors="replace")[-4000:] if err else None)
- def args(self,task):return []
-class OpenClawAdapter(CommandWorker):
- def __init__(self):super().__init__("openclaw",{"computer","channels","persistent_assistant"},"openclaw")
- def args(self,task):return ["agent","--message",task["goal"]]
-class OpenHandsAdapter(CommandWorker):
- def __init__(self):super().__init__("openhands",{"code","software_engineering"},"openhands")
- def args(self,task):return ["--help"]
+  goal=task.get("goal","")
+  try:
+   from tools.browser_tools import search_duckduckgo
+   result=search_duckduckgo(goal)
+   return WorkerResult(True,{"query":goal,"results":result})
+  except Exception as e:
+   return WorkerResult(False,error=str(e))
+
+class OpenClawAdapter(Worker):
+ name="openclaw";capabilities={"computer","channels","persistent_assistant"}
+ async def run(self,task):
+  if not shutil.which("openclaw"):return WorkerResult(False,error="openclaw not installed")
+  p=await asyncio.create_subprocess_exec("openclaw","agent","--message",task.get("goal",""),stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
+  out,err=await p.communicate()
+  return WorkerResult(p.returncode==0,{"stdout":out.decode(errors="replace")[-12000:]},err.decode(errors="replace")[-4000:] if err else None)
+
+class OpenHandsAdapter(Worker):
+ name="openhands";capabilities={"code","software_engineering"}
+ async def run(self,task):
+  if not shutil.which("openhands"):return WorkerResult(False,error="openhands not installed")
+  p=await asyncio.create_subprocess_exec("openhands","--help",stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
+  out,err=await p.communicate()
+  return WorkerResult(p.returncode==0,{"stdout":out.decode(errors="replace")[-12000:]},err.decode(errors="replace")[-4000:] if err else None)
