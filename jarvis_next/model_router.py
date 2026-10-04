@@ -18,35 +18,26 @@ class ModelRouter:
         return next((x for x in order if x in self.providers),None)
 
     def plan(self,goal,context=None):
-        provider=self.choose("general")
-        if provider!="openai":
-            return None
-        key=os.getenv("OPENAI_API_KEY")
-        if not key:
+        if self.choose("general")!="openai" or not os.getenv("OPENAI_API_KEY"):
             return None
         model=os.getenv("JARVIS_MODEL","gpt-6-luna")
-        schema={
-            "type":"object","additionalProperties":False,
-            "properties":{"steps":{"type":"array","items":{"type":"object","additionalProperties":False,"properties":{"capability":{"type":"string"},"action":{"type":"string"}},"required":["capability","action"]}}},
-            "required":["steps"]
-        }
-        prompt=("Create the smallest safe execution plan for this goal. "
-                "Use only capabilities and actions supplied by the application contract. "
-                "Never invent tools, credentials, URLs, permissions, or actions. "
+        timeout=float(os.getenv("JARVIS_MODEL_TIMEOUT","30"))
+        schema={"type":"object","additionalProperties":False,"properties":{"steps":{"type":"array","items":{"type":"object","additionalProperties":False,"properties":{"capability":{"type":"string"},"action":{"type":"string"}},"required":["capability","action"]}}},"required":["steps"]}
+        prompt=("Create the smallest safe execution plan for this goal. Use only capabilities and actions supplied by the application contract. Never invent tools, credentials, URLs, permissions, or actions. "
                 f"Goal: {goal}\nContext: {json.dumps(context or {},ensure_ascii=True)}")
-        payload={
-            "model":model,
-            "input":[{"role":"system","content":"You are the JARVIS planning layer. You propose plans only; the application validates and authorizes every step."},{"role":"user","content":prompt}],
-            "text":{"format":{"type":"json_schema","name":"jarvis_plan","strict":True,"schema":schema}}
-        }
-        response=requests.post("https://api.openai.com/v1/responses",headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"},json=payload,timeout=30)
-        response.raise_for_status()
-        data=response.json()
-        text=data.get("output_text")
-        if not text:
-            for item in data.get("output",[]):
-                for part in item.get("content",[]):
-                    if part.get("type")=="output_text":
-                        text=part.get("text"); break
-                if text: break
-        return json.loads(text) if text else None
+        payload={"model":model,"input":[{"role":"system","content":"You are the JARVIS planning layer. You propose plans only; the application validates and authorizes every step."},{"role":"user","content":prompt}],"text":{"format":{"type":"json_schema","name":"jarvis_plan","strict":True,"schema":schema}}}
+        try:
+            response=requests.post("https://api.openai.com/v1/responses",headers={"Authorization":f"Bearer {os.getenv('OPENAI_API_KEY')}","Content-Type":"application/json"},json=payload,timeout=timeout)
+            response.raise_for_status()
+            data=response.json()
+            text=data.get("output_text")
+            if not text:
+                for item in data.get("output",[]):
+                    for part in item.get("content",[]):
+                        if part.get("type")=="output_text":
+                            text=part.get("text")
+                            break
+                    if text: break
+            return json.loads(text) if text else None
+        except (requests.RequestException,ValueError,TypeError,json.JSONDecodeError):
+            return None
