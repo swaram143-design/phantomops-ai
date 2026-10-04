@@ -20,3 +20,7 @@ jobs:
           python-version: "3.11"
       - name: Run JARVIS-NEXT smoke test
         run: python -m jarvis_next.smoke_test
+      - name: Run NEXUS contract test
+        run: python -m jarvis_next.nexus_contract_test
+      - name: Run revenue chain contract test
+        run: python -m jarvis_next.revenue_chain_test
