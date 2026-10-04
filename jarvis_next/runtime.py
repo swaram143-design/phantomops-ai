@@ -36,7 +36,11 @@ class JarvisRuntime:
                 self.state.update(mid,"blocked",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
 
-            task={"goal":goal,"step":step,"step_index":i,"context":ctx}
+            task={"goal":goal,"step":step,"step_index":i,"context":ctx,"mission_id":mid}
+            task.update(ctx)
+            # Keep the canonical nested context after flattening so workers can
+            # consume the same persisted mission state consistently.
+            task["context"]=ctx
             workers=self.workers.ranked(step["capability"],task) if self.workers else []
             if not workers:
                 item={"status":"blocked","reason":"no worker","step":step,"step_index":i}; results.append(item)
@@ -49,7 +53,7 @@ class JarvisRuntime:
                 while attempt < self.max_retries + 1:
                     attempt += 1; attempts[key]=attempt
                     try:
-                        result=await worker.run({**ctx,"goal":goal,"step":step,"step_index":i,"attempt":attempt})
+                        result=await worker.run({**task,"attempt":attempt})
                     except Exception as e:
                         result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
                     verified,verification_error=self._verify(step,result)
