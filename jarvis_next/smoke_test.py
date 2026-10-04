@@ -4,6 +4,11 @@ from .runtime import JarvisRuntime
 from .adapters import WorkerRegistry,Worker,WorkerResult
 from .permissions import PermissionEngine
 
+class Fallback(Worker):
+    name="fallback"; capabilities={"research"}
+    def score(self,task): return 1
+    async def run(self,t): return WorkerResult(True,{"fallback":True})
+
 class Fake(Worker):
     name="fake"; capabilities={"research","external_send"}
     def score(self,task): return 10
