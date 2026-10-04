@@ -14,7 +14,15 @@ class JarvisRuntime:
     def _retryable(error):
         if not error: return False
         e=str(error).lower()
-        return any(x in e for x in ("timeout","timed out","temporarily","connection","429","503","502","rate limit","busy","try again","network"))
+        return any(x in e for x in ("timeout","timed out","temporarily","connection","429","503","502","rate limit","busy","try again","network","not installed"))
+
+    @staticmethod
+    def _verify(step,result):
+        if not result.ok: return False,"worker reported failure"
+        if result.data is None: return False,"worker returned no data"
+        if isinstance(result.data,dict) and result.data.get("success") is False:
+            return False,"worker result explicitly reports success=false"
+        return True,None
 
     async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None,results=None,attempts=None):
         results=list(results or []); attempts=dict(attempts or {})
@@ -26,32 +34,48 @@ class JarvisRuntime:
                 return {"mission_id":mid,"status":"awaiting_approval","approval_id":aid,"step":step,"step_index":i,"results":results,"context":ctx}
             if not decision.allowed and i != approved_step:
                 item={"status":"blocked","reason":decision.reason,"step":step,"step_index":i}; results.append(item)
-                self.state.update(mid,"blocked",plan=plan,result={"next_step":i+1,"context":ctx,"results":results,"attempts":attempts})
+                self.state.update(mid,"blocked",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
-            worker=self.workers.choose(step["capability"],{"goal":goal,"step":step,"context":ctx}) if self.workers else None
-            if not worker:
+
+            task={"goal":goal,"step":step,"step_index":i,"context":ctx}
+            workers=self.workers.ranked(step["capability"],task) if self.workers else []
+            if not workers:
                 item={"status":"blocked","reason":"no worker","step":step,"step_index":i}; results.append(item)
                 self.state.update(mid,"blocked",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
-            key=f"{i}:{worker.name}"; attempt=attempts.get(key,0)
-            while True:
-                attempt+=1; attempts[key]=attempt
-                try: result=await worker.run({"goal":goal,"step":step,"step_index":i,"attempt":attempt,**ctx})
-                except Exception as e: result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
-                retryable=result.retryable or self._retryable(result.error)
-                item={"status":"completed" if result.ok else ("retrying" if retryable and attempt<=self.max_retries else "failed"),
-                      "worker":worker.name,"attempt":attempt,"data":result.data,"error":result.error,"step":step,"step_index":i}
-                if result.ok:
+
+            step_done=False
+            for worker in workers:
+                key=f"{i}:{worker.name}"; attempt=attempts.get(key,0)
+                while attempt < self.max_retries + 1:
+                    attempt += 1; attempts[key]=attempt
+                    try:
+                        result=await worker.run({**ctx,"goal":goal,"step":step,"step_index":i,"attempt":attempt})
+                    except Exception as e:
+                        result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
+                    verified,verification_error=self._verify(step,result)
+                    if verified:
+                        item={"status":"completed","worker":worker.name,"attempt":attempt,"data":result.data,"error":None,"step":step,"step_index":i}
+                        results.append(item)
+                        if isinstance(result.data,dict): ctx.update(result.data)
+                        self.state.event("step.completed",{"step_index":i,"capability":step["capability"],"worker":worker.name,"attempt":attempt,"verified":True},mid)
+                        self.state.update(mid,"running",plan=plan,result={"next_step":i+1,"context":ctx,"results":results,"attempts":attempts})
+                        step_done=True; break
+                    error=result.error or verification_error
+                    retryable=result.retryable or self._retryable(error)
+                    item={"status":"retrying" if retryable and attempt<=self.max_retries else "failed","worker":worker.name,"attempt":attempt,"data":result.data,"error":error,"step":step,"step_index":i}
+                    if retryable and attempt<=self.max_retries:
+                        self.state.update(mid,"retrying",plan=plan,result={"next_step":i,"context":ctx,"results":results+[item],"attempts":attempts})
+                        self.state.event("step.retry",{"step_index":i,"worker":worker.name,"attempt":attempt,"error":error},mid)
+                        await asyncio.sleep(self.retry_delay*attempt)
+                        continue
                     results.append(item)
-                    if isinstance(result.data,dict): ctx.update(result.data)
-                    self.state.event("step.completed",{"step_index":i,"capability":step["capability"],"worker":worker.name,"attempt":attempt,"ok":True},mid)
-                    self.state.update(mid,"running",plan=plan,result={"next_step":i+1,"context":ctx,"results":results,"attempts":attempts})
+                    self.state.event("worker.failed",{"step_index":i,"worker":worker.name,"error":error,"fallback_available":len(workers)>1},mid)
                     break
-                if retryable and attempt<=self.max_retries:
-                    self.state.update(mid,"retrying",plan=plan,result={"next_step":i,"context":ctx,"results":results+[item],"attempts":attempts})
-                    self.state.event("step.retry",{"step_index":i,"worker":worker.name,"attempt":attempt,"error":result.error},mid)
-                    await asyncio.sleep(self.retry_delay*attempt); continue
-                results.append(item)
+                if step_done: break
+                self.state.event("worker.fallback",{"step_index":i,"failed_worker":worker.name},mid)
+
+            if not step_done:
                 self.state.update(mid,"failed",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
                 return {"mission_id":mid,"status":"failed","results":results,"context":ctx}
         self.state.update(mid,"completed",plan=plan,result={"next_step":len(plan["steps"]),"context":ctx,"results":results,"attempts":attempts})
