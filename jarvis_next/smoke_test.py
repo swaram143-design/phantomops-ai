@@ -20,6 +20,8 @@ async def main():
  assert b["status"]=="completed",b
  c=await x.submit("research opportunities")
  assert c["status"]=="completed",c
+ d=await x.submit("search browser opportunities")
+ assert d["status"] in ("completed","failed"),d
  print("JARVIS-NEXT SMOKE OK")
 
 if __name__=="__main__":asyncio.run(main())
