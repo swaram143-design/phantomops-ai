@@ -2,11 +2,14 @@ import asyncio,json,os
 from .state import StateStore
 from .permissions import PermissionEngine
 from .planner import MissionPlanner
+from .model_router import ModelRouter
+from .verifier import ResultVerifier
 from .adapters import WorkerResult
 
 class JarvisRuntime:
     def __init__(self,state=None,workers=None,permissions=None,max_retries=None,retry_delay=None):
         self.state=state or StateStore(); self.workers=workers; self.permissions=permissions or PermissionEngine()
+        self.planner=MissionPlanner(ModelRouter()); self.verifier=ResultVerifier()
         self.max_retries=int(max_retries if max_retries is not None else os.getenv("JARVIS_MAX_RETRIES","2"))
         self.retry_delay=float(retry_delay if retry_delay is not None else os.getenv("JARVIS_RETRY_DELAY","1"))
 
@@ -16,13 +19,9 @@ class JarvisRuntime:
         e=str(error).lower()
         return any(x in e for x in ("timeout","timed out","temporarily","connection","429","503","502","rate limit","busy","try again","network","not installed"))
 
-    @staticmethod
-    def _verify(step,result):
-        if not result.ok: return False,"worker reported failure"
-        if result.data is None: return False,"worker returned no data"
-        if isinstance(result.data,dict) and result.data.get("success") is False:
-            return False,"worker result explicitly reports success=false"
-        return True,None
+    def _verify(self,step,result):
+        if not result.ok: return False,result.error or "worker reported failure"
+        return self.verifier.verify(step,result.data)
 
     async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None,results=None,attempts=None):
         results=list(results or []); attempts=dict(attempts or {})
@@ -82,7 +81,7 @@ class JarvisRuntime:
         return {"mission_id":mid,"status":"completed","results":results,"context":ctx}
 
     async def submit(self,goal,context=None):
-        mid=self.state.create_mission(goal); plan=MissionPlanner().plan(goal); ctx=context or {}
+        mid=self.state.create_mission(goal); ctx=context or {}; plan=self.planner.plan(goal,ctx)
         self.state.update(mid,"running",plan=plan,result={"next_step":0,"context":ctx,"results":[],"attempts":{}})
         return await self._run(mid,goal,plan,ctx,0)
 
