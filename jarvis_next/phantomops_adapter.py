@@ -2,6 +2,14 @@ from .adapters import Worker,WorkerResult
 
 class PhantomOpsAdapter(Worker):
  name="phantomops";capabilities={"research","opportunity","select_target","proposal","external_send"}
+ def score(self,task):
+  goal=str(task.get("goal","")).lower()
+  step=task.get("step",{})
+  cap=step.get("capability","")
+  score=20
+  if cap in self.capabilities: score+=20
+  if any(x in goal for x in ("revenue","lead","client","customer","prospect","proposal","automation")): score+=30
+  return score
  def _items(self,data):
   if not isinstance(data,dict):return []
   items=[]
