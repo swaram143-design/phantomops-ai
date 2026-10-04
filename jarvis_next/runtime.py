@@ -5,7 +5,7 @@ from .planner import MissionPlanner
 class JarvisRuntime:
  def __init__(self,state=None,workers=None,permissions=None):
   self.state=state or StateStore();self.workers=workers;self.permissions=permissions or PermissionEngine()
- async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None):
+ async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None):
   results=[]
   for i,step in enumerate(plan["steps"][start_index:],start=start_index):
    d=self.permissions.check(step["action"])
@@ -40,4 +40,4 @@ class JarvisRuntime:
   if not approved:
    result={"mission_id":mid,"status":"rejected","approval_id":approval_id}
    self.state.update(mid,"rejected",plan=plan,result=result);return result
-  return await self._run(mid,m["goal"],plan,ctx,payload["step_index"]+1)
+  return await self._run(mid,m["goal"],plan,ctx,payload["step_index"],approval_id,approved_step=payload["step_index"])
