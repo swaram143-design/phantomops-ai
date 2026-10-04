@@ -27,9 +27,10 @@ class WorkerRegistry:
     def find(self, capability):
         return [w for w in self.workers.values() if capability in w.capabilities]
 
-    def choose(self, capability, task=None):
-        candidates = self.find(capability)
-        if not candidates:
-            return None
+    def ranked(self, capability, task=None):
         task = task or {}
-        return sorted(candidates, key=lambda w: (w.score(task), w.name), reverse=True)[0]
+        return sorted(self.find(capability), key=lambda w: (w.score(task), w.name), reverse=True)
+
+    def choose(self, capability, task=None):
+        candidates = self.ranked(capability, task)
+        return candidates[0] if candidates else None
