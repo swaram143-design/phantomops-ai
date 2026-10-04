@@ -1,0 +1,22 @@
+name: JARVIS-NEXT Smoke Test
+
+on:
+  push:
+    branches: [jarvis-next]
+    paths:
+      - "jarvis_next/**"
+  pull_request:
+    branches: [jarvis-next]
+    paths:
+      - "jarvis_next/**"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run JARVIS-NEXT smoke test
+        run: python -m jarvis_next.smoke_test
