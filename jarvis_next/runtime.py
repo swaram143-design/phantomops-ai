@@ -23,8 +23,22 @@ class JarvisRuntime:
         if not result.ok: return False,result.error or "worker reported failure"
         return self.verifier.verify(step,result.data)
 
+    @staticmethod
+    def _record_output(ctx,index,data):
+        outputs=ctx.setdefault("step_outputs",{})
+        outputs[str(index)]=data
+        if not isinstance(data,dict):
+            return
+        # Preserve the first authoritative value for identity/routing fields;
+        # store later versions in step_outputs instead of silently overwriting it.
+        protected={"company","recipient","selected_target","selection_score"}
+        for key,value in data.items():
+            if key not in protected or key not in ctx:
+                ctx[key]=value
+
     async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None,results=None,attempts=None):
         results=list(results or []); attempts=dict(attempts or {})
+        ctx.setdefault("step_outputs",{})
         for i in range(start_index,len(plan["steps"])):
             step=plan["steps"][i]; decision=self.permissions.check(step["action"])
             if decision.requires_approval and i != approved_step:
@@ -38,8 +52,6 @@ class JarvisRuntime:
 
             task={"goal":goal,"step":step,"step_index":i,"context":ctx,"mission_id":mid}
             task.update(ctx)
-            # Keep the canonical nested context after flattening so workers can
-            # consume the same persisted mission state consistently.
             task["context"]=ctx
             workers=self.workers.ranked(step["capability"],task) if self.workers else []
             if not workers:
@@ -60,7 +72,7 @@ class JarvisRuntime:
                     if verified:
                         item={"status":"completed","worker":worker.name,"attempt":attempt,"data":result.data,"error":None,"step":step,"step_index":i}
                         results.append(item)
-                        if isinstance(result.data,dict): ctx.update(result.data)
+                        self._record_output(ctx,i,result.data)
                         self.state.event("step.completed",{"step_index":i,"capability":step["capability"],"worker":worker.name,"attempt":attempt,"verified":True},mid)
                         self.state.update(mid,"running",plan=plan,result={"next_step":i+1,"context":ctx,"results":results,"attempts":attempts})
                         step_done=True; break
