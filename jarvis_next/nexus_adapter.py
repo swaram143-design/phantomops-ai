@@ -6,11 +6,10 @@ from .adapters import Worker, WorkerResult
 
 class NexusLegacyAdapter(Worker):
     """
-    Adapter around the existing local NEXUS/GRAM agent registry.
+    Bridge JARVIS-NEXT to the real NEXUS/GRAM TaskRouter.
 
-    JARVIS-NEXT remains the authority for mission state and permissions.
-    This adapter only delegates an already-authorized step to legacy NEXUS
-    workers. It is intentionally optional so PhantomOps can still run alone.
+    JARVIS-NEXT owns mission state, permissions and approvals. NEXUS/GRAM
+    remains the legacy execution layer underneath it.
     """
     name = "nexus_legacy"
     capabilities = {
@@ -31,58 +30,55 @@ class NexusLegacyAdapter(Worker):
         "autonomous_followup",
         "crm_sanitizer",
         "learning_feedback",
+        "lead_intelligence",
+        "executive_report",
+        "govi",
     }
 
     def __init__(self, nexus_root=None):
         self.nexus_root = nexus_root or os.getenv("NEXUS_ROOT")
-        self.registry = None
+        self.router = None
 
-    def _load_registry(self):
-        if self.registry is not None:
-            return self.registry
+    def _load_router(self):
+        if self.router is not None:
+            return self.router
         if not self.nexus_root:
             raise RuntimeError("NEXUS_ROOT is not configured")
         root = os.path.abspath(self.nexus_root)
         if root not in sys.path:
             sys.path.insert(0, root)
-        module = importlib.import_module("gram.agent_registry")
-        self.registry = getattr(module, "agent_registry", None)
-        if self.registry is None:
-            registry_cls = getattr(module, "AgentRegistry", None)
-            if registry_cls is None:
-                raise RuntimeError("NEXUS GRAM AgentRegistry not found")
-            self.registry = registry_cls()
-        return self.registry
+        module = importlib.import_module("gram.task_router")
+        self.router = getattr(module, "task_router", None)
+        if self.router is None:
+            router_cls = getattr(module, "TaskRouter", None)
+            if router_cls is None:
+                raise RuntimeError("NEXUS GRAM TaskRouter not found")
+            self.router = router_cls()
+        return self.router
 
     def score(self, task):
         if not self.nexus_root:
             return -100
-        step = task.get("step", {})
-        capability = step.get("capability")
-        if capability in self.capabilities:
-            return 80
-        return 0
+        capability = task.get("step", {}).get("capability")
+        return 80 if capability in self.capabilities else 0
 
     async def run(self, task):
         try:
-            registry = self._load_registry()
+            router = self._load_router()
             step = task.get("step", {})
             task_type = step.get("capability")
-            agent = registry.get_agent(task_type)
-            if agent is None:
-                return WorkerResult(False, error=f"NEXUS agent not found: {task_type}")
+            if task_type not in router.available_routes():
+                return WorkerResult(False, error=f"NEXUS route not found: {task_type}")
+
             payload = dict(task)
             payload["type"] = task_type
-            if hasattr(agent, "execute"):
-                result = agent.execute(payload)
-            elif hasattr(agent, "run"):
-                result = agent.run(payload)
-            else:
-                return WorkerResult(False, error=f"NEXUS agent has no execute/run method: {task_type}")
-            if asyncio.iscoroutine(result):
-                result = await result
+            result = await router.route(payload)
             if isinstance(result, dict):
-                return WorkerResult(bool(result.get("success", True)), result, result.get("error"))
+                return WorkerResult(
+                    bool(result.get("success", True)),
+                    result,
+                    result.get("error"),
+                )
             return WorkerResult(True, result)
         except Exception as exc:
             return WorkerResult(False, error=str(exc), retryable=False)
