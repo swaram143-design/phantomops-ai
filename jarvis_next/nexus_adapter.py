@@ -6,10 +6,10 @@ from .adapters import Worker, WorkerResult
 
 class NexusLegacyAdapter(Worker):
     """
-    Bridge JARVIS-NEXT to the real NEXUS/GRAM TaskRouter.
+    Bridge JARVIS-NEXT to the stable NEXUS GRAM supervisor.
 
-    JARVIS-NEXT owns mission state, permissions and approvals. NEXUS/GRAM
-    remains the legacy execution layer underneath it.
+    JARVIS-NEXT owns mission state, permissions, approvals, retries and
+    verification. GRAM remains the legacy organizational execution layer.
     """
     name = "nexus_legacy"
     capabilities = {
@@ -37,24 +37,24 @@ class NexusLegacyAdapter(Worker):
 
     def __init__(self, nexus_root=None):
         self.nexus_root = nexus_root or os.getenv("NEXUS_ROOT")
-        self.router = None
+        self.supervisor = None
 
-    def _load_router(self):
-        if self.router is not None:
-            return self.router
+    def _load_supervisor(self):
+        if self.supervisor is not None:
+            return self.supervisor
         if not self.nexus_root:
             raise RuntimeError("NEXUS_ROOT is not configured")
         root = os.path.abspath(self.nexus_root)
         if root not in sys.path:
             sys.path.insert(0, root)
-        module = importlib.import_module("gram.task_router")
-        self.router = getattr(module, "task_router", None)
-        if self.router is None:
-            router_cls = getattr(module, "TaskRouter", None)
-            if router_cls is None:
-                raise RuntimeError("NEXUS GRAM TaskRouter not found")
-            self.router = router_cls()
-        return self.router
+        module = importlib.import_module("gram.gram_supervisor")
+        self.supervisor = getattr(module, "gram_supervisor", None)
+        if self.supervisor is None:
+            supervisor_cls = getattr(module, "GRAMSupervisor", None)
+            if supervisor_cls is None:
+                raise RuntimeError("NEXUS GRAMSupervisor not found")
+            self.supervisor = supervisor_cls()
+        return self.supervisor
 
     def score(self, task):
         if not self.nexus_root:
@@ -64,15 +64,15 @@ class NexusLegacyAdapter(Worker):
 
     async def run(self, task):
         try:
-            router = self._load_router()
+            supervisor = self._load_supervisor()
             step = task.get("step", {})
             task_type = step.get("capability")
-            if task_type not in router.available_routes():
-                return WorkerResult(False, error=f"NEXUS route not found: {task_type}")
+            if task_type not in supervisor.available_agents():
+                return WorkerResult(False, error=f"NEXUS agent not available: {task_type}")
 
             payload = dict(task)
             payload["type"] = task_type
-            result = await router.route(payload)
+            result = await supervisor.execute(payload)
             if isinstance(result, dict):
                 return WorkerResult(
                     bool(result.get("success", True)),
