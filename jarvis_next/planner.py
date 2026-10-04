@@ -3,7 +3,14 @@ import os
 import requests
 
 SAFE_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send"}
-CAPABILITIES={"research","opportunity","select_target","proposal","external_send","code","test","browser","research_online","computer","channels","persistent_assistant","software_engineering"}
+CAPABILITIES={
+    "research","opportunity","select_target","proposal","external_send","code","test",
+    "browser","research_online","computer","channels","persistent_assistant","software_engineering",
+    "legacy_agent","lead","proposal_delivery","email_outreach","followup","analytics",
+    "marketplace_mining","marketplace_bidding","live_marketplace","outreach_draft","campaign",
+    "inbox_monitor","autonomous_followup","crm_sanitizer","learning_feedback","lead_intelligence",
+    "executive_report","govi",
+}
 
 class PlanValidationError(ValueError):
     pass
