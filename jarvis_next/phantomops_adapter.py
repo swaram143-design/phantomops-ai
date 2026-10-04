@@ -10,6 +10,9 @@ class PhantomOpsAdapter(Worker):
   if cap in self.capabilities: score+=20
   if any(x in goal for x in ("revenue","lead","client","customer","prospect","proposal","automation")): score+=30
   return score
+ def _context(self,task):
+  context=task.get("context")
+  return context if isinstance(context,dict) else {}
  def _items(self,data):
   if not isinstance(data,dict):return []
   items=[]
@@ -34,27 +37,38 @@ class PhantomOpsAdapter(Worker):
   return {"company":company,"need":need,"recipient":recipient,"selected_target":x,"selection_score":score(x)}
  async def run(self,task):
   try:
-   c=task["step"]["capability"];goal=task["goal"]
+   c=task["step"]["capability"];goal=task["goal"];ctx=self._context(task)
+   merged={**ctx,**task}
    if c=="research":
     from agents.lead_scraper_agent import LeadScraperAgent
-    r=await LeadScraperAgent().execute({"description":goal});return WorkerResult(r.get("success",False),r)
+    r=await LeadScraperAgent().execute({"description":goal,**ctx})
+    return WorkerResult(r.get("success",False),r,r.get("error"))
    if c=="opportunity":
     from agents.opportunity_agent import OpportunityAgent
-    r=await OpportunityAgent().execute({"description":goal,**task});return WorkerResult(r.get("success",False),r)
+    r=await OpportunityAgent().execute({"description":goal,**ctx,**task})
+    return WorkerResult(r.get("success",False),r,r.get("error"))
    if c=="select_target":
-    data={k:v for k,v in task.items() if k in ("leads","opportunities")}
-    return WorkerResult(True,self._pick_target(data,goal))
+    target=self._pick_target(merged,goal)
+    return WorkerResult(True,target)
    if c=="proposal":
-    target=self._pick_target(task,goal) if not task.get("selected_target") else {"company":task.get("company","Prospect"),"need":task.get("need",goal),"recipient":task.get("recipient"),"selected_target":task.get("selected_target")}
+    target=merged if merged.get("selected_target") else self._pick_target(merged,goal)
+    payload={"company":target.get("company","Prospect"),"need":target.get("need",goal)}
     from agents.proposal_agent import ProposalAgent
-    r=await ProposalAgent().execute({"company":target["company"],"need":target["need"]})
+    r=await ProposalAgent().execute(payload)
     if isinstance(r,dict):r.update(target)
-    return WorkerResult(r.get("success",False),r)
+    return WorkerResult(r.get("success",False),r,r.get("error"))
    if c=="external_send":
-    recipient=task.get("recipient")
-    if not recipient:return WorkerResult(False,error="No verified recipient email is available; refusing to send.")
+    recipient=merged.get("recipient")
+    if not recipient:
+     return WorkerResult(False,error="No verified recipient email is available; refusing to send.")
     from agents.proposal_delivery_agent import ProposalDeliveryAgent
-    r=await ProposalDeliveryAgent().execute({"company":task.get("company","Prospect"),"need":task.get("need",goal),"recipient":recipient})
+    r=await ProposalDeliveryAgent().execute({
+      "company":merged.get("company","Prospect"),
+      "need":merged.get("need",goal),
+      "recipient":recipient,
+      **({"proposal":merged["proposal"]} if "proposal" in merged else {}),
+    })
     return WorkerResult(r.get("success",False),r,r.get("error"))
    return WorkerResult(False,error=f"Unsupported capability: {c}")
-  except Exception as e:return WorkerResult(False,error=str(e))
+  except Exception as e:
+   return WorkerResult(False,error=str(e))
