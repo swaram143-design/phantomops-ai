@@ -7,6 +7,9 @@ from .nexus_adapter import NexusLegacyAdapter
 
 
 class FakeSupervisor:
+    name = "GRAM-test"
+    status = "ready"
+
     def __init__(self):
         self.calls = []
 
@@ -35,6 +38,13 @@ async def main():
         adapter = NexusLegacyAdapter(root)
         assert adapter.score({"step": {"capability": "research"}}) == 80
         assert adapter.score({"step": {"capability": "unknown"}}) == 0
+
+        health = adapter.health()
+        assert health["ok"] is True, health
+        assert health["supervisor"] == "GRAM-test", health
+        assert health["status"] == "ready", health
+        assert health["supported_by_adapter"] == ["lead", "research"], health
+        assert "proposal" in health["unsupported_by_nexus"], health
 
         result = await adapter.run({
             "goal": "research opportunities",
