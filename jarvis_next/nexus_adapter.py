@@ -3,8 +3,10 @@ import os
 import sys
 from .adapters import Worker, WorkerResult
 
+
 class NexusLegacyAdapter(Worker):
     """Bridge JARVIS-NEXT to the stable NEXUS GRAM supervisor."""
+
     name = "nexus_legacy"
     capabilities = {
         "legacy_agent", "lead", "opportunity", "proposal", "proposal_delivery",
@@ -37,6 +39,31 @@ class NexusLegacyAdapter(Worker):
             raise RuntimeError("NEXUS GRAMSupervisor has an incompatible interface")
         return self.supervisor
 
+    def _available_agents(self):
+        """Normalize the legacy GRAM agent list for routing and health checks."""
+        agents = self._load_supervisor().available_agents()
+        if agents is None:
+            return set()
+        if isinstance(agents, dict):
+            return set(agents.keys())
+        return set(agents)
+
+    def health(self):
+        """Non-destructive compatibility/availability check for the NEXUS bridge."""
+        try:
+            supervisor = self._load_supervisor()
+            available = self._available_agents()
+            return {
+                "ok": True,
+                "supervisor": getattr(supervisor, "name", "GRAM"),
+                "status": getattr(supervisor, "status", "unknown"),
+                "available_agents": sorted(available),
+                "supported_by_adapter": sorted(self.capabilities & available),
+                "unsupported_by_nexus": sorted(self.capabilities - available),
+            }
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
     def score(self, task):
         if not self.nexus_root:
             return -100
@@ -46,8 +73,13 @@ class NexusLegacyAdapter(Worker):
         try:
             supervisor = self._load_supervisor()
             task_type = task.get("step", {}).get("capability")
-            if task_type not in supervisor.available_agents():
+            if not task_type:
+                return WorkerResult(False, error="NEXUS task type is missing")
+
+            available = self._available_agents()
+            if task_type not in available:
                 return WorkerResult(False, error=f"NEXUS agent not available: {task_type}")
+
             payload = dict(task)
             payload["type"] = task_type
             result = await supervisor.execute(payload)
