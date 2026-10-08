@@ -2,7 +2,8 @@ import json
 import os
 import requests
 
-SAFE_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send"}
+# Planner-level vocabulary. Authorization is enforced separately by PermissionEngine.
+ALLOWED_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send"}
 CAPABILITIES={
     "research","opportunity","select_target","proposal","external_send","code","test",
     "browser","research_online","computer","channels","persistent_assistant","software_engineering",
@@ -43,7 +44,7 @@ class MissionPlanner:
             action=raw.get("action")
             if capability not in CAPABILITIES:
                 raise PlanValidationError(f"unknown capability: {capability}")
-            if action not in SAFE_ACTIONS:
+            if action not in ALLOWED_ACTIONS:
                 raise PlanValidationError(f"unknown or disallowed action: {action}")
             normalized.append({"capability":capability,"action":action})
         return {"goal":goal,"steps":normalized,"source":plan.get("source","model")}
