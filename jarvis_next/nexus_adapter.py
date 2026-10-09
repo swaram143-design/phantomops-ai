@@ -9,7 +9,7 @@ class NexusLegacyAdapter(Worker):
 
     name = "nexus_legacy"
     capabilities = {
-        "legacy_agent", "lead", "opportunity", "proposal", "proposal_delivery",
+        "legacy_agent", "research", "lead", "opportunity", "proposal", "proposal_delivery",
         "email_outreach", "followup", "analytics", "marketplace_mining",
         "marketplace_bidding", "live_marketplace", "outreach_draft", "campaign",
         "inbox_monitor", "autonomous_followup", "crm_sanitizer", "learning_feedback",
