@@ -1,7 +1,3 @@
-import json
-import os
-import requests
-
 # Planner-level vocabulary. Authorization is enforced separately by PermissionEngine.
 ALLOWED_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send"}
 CAPABILITIES={
