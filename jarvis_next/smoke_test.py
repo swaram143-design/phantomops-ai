@@ -25,38 +25,43 @@ class Fake(Worker):
         return WorkerResult(True,{'ok':True,'echo':t['step']['capability']})
 
 async def main():
-    p=os.path.join(tempfile.gettempdir(),'jarvis_next_test.db')
-    try: os.remove(p)
-    except FileNotFoundError: pass
-    r=WorkerRegistry(); r.register(Fake())
-    x=JarvisRuntime(StateStore(p),r,PermissionEngine('WORK'),max_retries=2,retry_delay=0)
-    a=await x.submit('find revenue opportunities')
-    assert a['status']=='awaiting_approval',a
-    assert x.state.conn.execute('SELECT COUNT(*) FROM approvals WHERE mission_id=?',(a['mission_id'],)).fetchone()[0]==1
-    resumed=await x.resume_mission(a['mission_id'])
-    assert resumed['status']=='awaiting_approval' and resumed['approval_id']==a['approval_id'],resumed
-    assert (await x.resume(a['approval_id'],approved=True))['status']=='completed'
-    assert (await x.submit('research opportunities'))['status']=='completed'
-    r2=WorkerRegistry(); r2.register(AlwaysFail()); r2.register(Fallback())
-    fp=os.path.join(tempfile.gettempdir(),'jarvis_next_fallback.db')
-    try: os.remove(fp)
-    except FileNotFoundError: pass
-    x2=JarvisRuntime(StateStore(fp),r2,PermissionEngine('WORK'),max_retries=0,retry_delay=0)
-    e=await x2.submit('research opportunities')
-    assert e['status']=='completed' and any(item.get('worker')=='fallback' for item in e['results']),e
-    d=await x.submit('retry test')
-    assert d['status']=='completed',d
-    saved=json.loads(x.state.get_mission(d['mission_id'])['result'])
-    assert saved['next_step']==1,saved
+    # Smoke tests must exercise the deterministic planner unless a test
+    # explicitly opts into model planning. Preserve any caller key and restore
+    # it after the test so CI cannot change the expected plan shape.
+    original_key=os.environ.pop('OPENAI_API_KEY',None)
     try:
-        MissionPlanner.validate('bad',{'steps':[{'capability':'shell','action':'execute'}]})
-        raise AssertionError('invalid plan accepted')
-    except PlanValidationError: pass
-    router=ModelRouter(); original=os.environ.pop('OPENAI_API_KEY',None)
-    try: assert router.plan('find revenue opportunities',{}) is None
+        p=os.path.join(tempfile.gettempdir(),'jarvis_next_test.db')
+        try: os.remove(p)
+        except FileNotFoundError: pass
+        r=WorkerRegistry(); r.register(Fake())
+        x=JarvisRuntime(StateStore(p),r,PermissionEngine('WORK'),max_retries=2,retry_delay=0)
+        a=await x.submit('find revenue opportunities')
+        assert a['status']=='awaiting_approval',a
+        assert x.state.conn.execute('SELECT COUNT(*) FROM approvals WHERE mission_id=?',(a['mission_id'],)).fetchone()[0]==1
+        resumed=await x.resume_mission(a['mission_id'])
+        assert resumed['status']=='awaiting_approval' and resumed['approval_id']==a['approval_id'],resumed
+        assert (await x.resume(a['approval_id'],approved=True))['status']=='completed'
+        research=await x.submit('research opportunities')
+        assert research['status']=='completed',research
+        r2=WorkerRegistry(); r2.register(AlwaysFail()); r2.register(Fallback())
+        fp=os.path.join(tempfile.gettempdir(),'jarvis_next_fallback.db')
+        try: os.remove(fp)
+        except FileNotFoundError: pass
+        x2=JarvisRuntime(StateStore(fp),r2,PermissionEngine('WORK'),max_retries=0,retry_delay=0)
+        e=await x2.submit('research opportunities')
+        assert e['status']=='completed' and any(item.get('worker')=='fallback' for item in e['results']),e
+        d=await x.submit('retry test')
+        assert d['status']=='completed',d
+        saved=json.loads(x.state.get_mission(d['mission_id'])['result'])
+        assert saved['next_step']==1,saved
+        try:
+            MissionPlanner.validate('bad',{'steps':[{'capability':'shell','action':'execute'}]})
+            raise AssertionError('invalid plan accepted')
+        except PlanValidationError: pass
+        router=ModelRouter(); assert router.plan('find revenue opportunities',{}) is None
+        assert settings.max_retries>=0 and settings.retry_delay>=0
+        print('JARVIS-NEXT SMOKE OK')
     finally:
-        if original is not None: os.environ['OPENAI_API_KEY']=original
-    assert settings.max_retries>=0 and settings.retry_delay>=0
-    print('JARVIS-NEXT SMOKE OK')
+        if original_key is not None: os.environ['OPENAI_API_KEY']=original_key
 
 if __name__=='__main__': asyncio.run(main())
