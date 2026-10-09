@@ -18,7 +18,7 @@ class AlwaysFail(Worker):
     async def run(self,t): return WorkerResult(False,error='permanent failure')
 
 class Fake(Worker):
-    name='fake'; capabilities={'research','opportunity','select_target','proposal','external_send'}
+    name='fake'; capabilities={'research','browser','opportunity','select_target','proposal','external_send'}
     def score(self,task): return 10
     async def run(self,t):
         if t['step']['capability']=='research' and t['attempt']==1 and t['goal']=='retry test': return WorkerResult(False,error='temporary timeout',retryable=True)
