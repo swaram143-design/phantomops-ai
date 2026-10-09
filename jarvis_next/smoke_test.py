@@ -8,12 +8,12 @@ from .model_router import ModelRouter
 from .config import settings
 
 class Fallback(Worker):
-    name='fallback'; capabilities={'research'}
+    name='fallback'; capabilities={'research','browser'}
     def score(self,task): return 1
     async def run(self,t): return WorkerResult(True,{'fallback':True})
 
 class AlwaysFail(Worker):
-    name='always_fail'; capabilities={'research'}
+    name='always_fail'; capabilities={'research','browser'}
     def score(self,task): return 20
     async def run(self,t): return WorkerResult(False,error='permanent failure')
 
