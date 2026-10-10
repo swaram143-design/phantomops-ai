@@ -22,6 +22,8 @@ jobs:
         run: python -m jarvis_next.smoke_test
       - name: Run bootstrap contract test
         run: python -m jarvis_next.bootstrap_contract_test
+      - name: Run OpenHands adapter contract test
+        run: python -m jarvis_next.openhands_adapter_contract_test
       - name: Run NEXUS contract test
         run: python -m jarvis_next.nexus_contract_test
       - name: Run NEXUS route compatibility test
