@@ -100,19 +100,23 @@ async def main():
 
     first = await runtime.submit("find revenue opportunities")
     assert first["status"] == "awaiting_approval", first
+    assert first["step_index"] == 4, first
     assert set(first["context"]["step_outputs"]) == {"0", "1", "2", "3"}, first
 
     # Approval 1: CRM sync. No CRM side effect is executed before approval.
     crm_approval = first["approval_id"]
     crm = await runtime.resume(crm_approval, approved=True)
     assert crm["status"] == "awaiting_approval", crm
+    assert crm["step_index"] == 5, crm
     assert crm["context"]["crm_marker"] == "crm-sync-complete", crm
     assert crm["context"]["crm_id"] == "crm-acme-001", crm
 
-    # Approval 2: external proposal delivery.
+    # Approval 2: external proposal delivery. The approved send executes,
+    # then JARVIS pauses before the next external follow-up workflow.
     send = await runtime.resume(crm["approval_id"], approved=True)
     assert send["status"] == "awaiting_approval", send
-    assert send["context"].get("sent") is not True, send
+    assert send["step_index"] == 6, send
+    assert send["context"]["sent"] is True, send
     assert send["context"]["crm_id"] == "crm-acme-001", send
 
     # Approval 3: follow-up workflow.
