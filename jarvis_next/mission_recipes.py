@@ -12,7 +12,11 @@ RECIPES = {
             ("opportunity", "analyze"),
             ("select_target", "analyze"),
             ("proposal", "draft"),
+            # CRM creation/update is external state and therefore remains approval-gated.
+            ("crm_sync", "workflow_trigger"),
             ("external_send", "external_send"),
+            # Follow-up automation is also an external workflow and remains approval-gated.
+            ("followup_automation", "workflow_trigger"),
         ),
     },
     "clinic_reactivation": {
