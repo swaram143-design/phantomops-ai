@@ -1,5 +1,5 @@
 # Planner-level vocabulary. Authorization is enforced separately by PermissionEngine.
-ALLOWED_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send","external_call","delegate"}
+ALLOWED_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send","external_call","external_write","workflow_trigger","delegate"}
 CAPABILITIES={
     "research","opportunity","select_target","proposal","external_send","external_call","code","test",
     "browser","research_online","computer","channels","persistent_assistant","software_engineering",
@@ -9,6 +9,7 @@ CAPABILITIES={
     "executive_report","govi","swarm","learning","multi_agent","analysis",
     "org_task","delegation","business_management","heartbeat",
     "voice_receptionist","appointment_booking","message_taking",
+    "workflow_automation","crm_sync","integration","followup_automation",
 }
 
 class PlanValidationError(ValueError):
@@ -22,6 +23,8 @@ class MissionPlanner:
         g=goal.lower()
         if any(x in g for x in ("phone","call","receptionist","answer calls","inbound call")):
             steps=[("voice_receptionist","external_call")]
+        elif any(x in g for x in ("crm","sync customer","sync lead","update pipeline","workflow","n8n","automation workflow")):
+            steps=[("workflow_automation","workflow_trigger")]
         elif any(x in g for x in ("revenue","income","client","lead","customer","prospect")):
             steps=[("research","research"),("opportunity","analyze"),("select_target","analyze"),("proposal","draft"),("external_send","external_send")]
         elif any(x in g for x in ("delegate","delegate task","organization","company","manager","subtask")):
