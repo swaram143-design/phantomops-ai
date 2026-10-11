@@ -4,7 +4,7 @@ from .adapters import WorkerRegistry
 from .phantomops_adapter import PhantomOpsAdapter
 from .external_adapters import OpenClawAdapter,OpenHandsAdapter,BrowserWorker
 from .nexus_adapter import NexusLegacyAdapter
-from .ecosystem_adapters import RufloAdapter,PaperclipAdapter,AIReceptionistAdapter
+from .ecosystem_adapters import RufloAdapter,PaperclipAdapter,AIReceptionistAdapter,N8NAdapter
 
 def build_registry():
     r=WorkerRegistry()
@@ -16,6 +16,7 @@ def build_registry():
         RufloAdapter(),
         PaperclipAdapter(),
         AIReceptionistAdapter(),
+        N8NAdapter(),
     ]
     if os.getenv("NEXUS_ROOT"):
         workers.append(NexusLegacyAdapter())
