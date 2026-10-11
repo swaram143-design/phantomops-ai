@@ -34,3 +34,5 @@ jobs:
         run: python -m jarvis_next.revenue_chain_test
       - name: Run planner policy test
         run: python -m jarvis_next.planner_policy_test
+      - name: Run mission recipe contract test
+        run: python -m jarvis_next.mission_recipes_test
