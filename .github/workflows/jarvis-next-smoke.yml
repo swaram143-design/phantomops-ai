@@ -36,3 +36,5 @@ jobs:
         run: python -m jarvis_next.planner_policy_test
       - name: Run mission recipe contract test
         run: python -m jarvis_next.mission_recipes_test
+      - name: Run durable revenue approval resume test
+        run: python -m jarvis_next.revenue_runtime_test
