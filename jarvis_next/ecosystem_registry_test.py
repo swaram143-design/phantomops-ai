@@ -8,7 +8,7 @@ from .permissions import PermissionEngine
 def main():
     registry = build_registry()
     names = {worker.name for worker in registry.workers.values()}
-    required = {"phantomops", "browser", "openclaw", "openhands", "ruflo", "paperclip", "ai_receptionist", "n8n"}
+    required = {"phantomops", "browser", "openclaw", "openhands", "ruflo", "paperclip", "ai_receptionist", "n8n", "twenty"}
     assert required.issubset(names), names
 
     plans = {
@@ -28,6 +28,7 @@ def main():
     assert registry.workers["paperclip"].score({"step": {"capability": "org_task"}}) > 0
     assert registry.workers["ai_receptionist"].score({"step": {"capability": "voice_receptionist"}}) > 0
     assert registry.workers["n8n"].score({"step": {"capability": "workflow_automation"}}) > 0
+    assert registry.workers["twenty"].score({"step": {"capability": "crm_sync"}}) > registry.workers["n8n"].score({"step": {"capability": "crm_sync"}})
 
     for action in ("external_call", "external_write", "workflow_trigger"):
         decision = PermissionEngine("WORK").check(action)
