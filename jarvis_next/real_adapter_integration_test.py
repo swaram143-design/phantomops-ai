@@ -88,6 +88,10 @@ async def scenario():
         )
         assert direct.ok and direct.data["id"] == "crm-acme-001"
         assert WebhookHandler.calls[-1]["auth"] == "Bearer test-key"
+        assert WebhookHandler.calls[0]["payload"]["name"] == "Acme Clinic"
+        assert WebhookHandler.calls[0]["payload"]["email"] == "owner@acme.example"
+        assert WebhookHandler.calls[0]["payload"]["need"] == "appointment recovery"
+        assert WebhookHandler.calls[0]["payload"]["score"] == 91
 
         workflow = await n8n.run(
             {
@@ -99,7 +103,7 @@ async def scenario():
         )
         assert workflow.ok and workflow.data["id"] == "workflow-001"
         assert WebhookHandler.calls[-1]["auth"] == "Bearer test-token"
-        assert WebhookHandler.calls[0]["payload"]["context"]["company"] == "Acme Clinic"
+        assert WebhookHandler.calls[1]["payload"]["context"]["company"] == "Acme Clinic"
         assert WebhookHandler.calls[1]["payload"]["context"]["crm_id"] == "crm-acme-001"
         assert WebhookHandler.calls[1]["payload"]["context"]["sent"] is True
 
