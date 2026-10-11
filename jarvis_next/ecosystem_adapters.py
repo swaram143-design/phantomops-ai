@@ -3,9 +3,10 @@
 JARVIS remains the authority layer. External projects are execution workers:
 - Paperclip: organizational control/task plane.
 - Ruflo: swarm/routing/learning execution harness.
+- AIReceptionist: optional voice/telephony execution backend.
 
-Neither adapter bypasses JARVIS permissions; sensitive actions are still gated
-by JarvisRuntime before a worker is called.
+External projects are invoked as workers; JARVIS owns planning, state and
+permission decisions.
 """
 
 from __future__ import annotations
@@ -49,8 +50,6 @@ async def _run_command(command: list[str], *, cwd: str | None = None, timeout: i
 
 
 class RufloAdapter(Worker):
-    """Use Ruflo as an optional swarm/learning execution backend."""
-
     name = "ruflo"
     capabilities = {"swarm", "learning", "multi_agent", "research", "code", "analysis"}
 
@@ -74,14 +73,6 @@ class RufloAdapter(Worker):
 
 
 class PaperclipAdapter(Worker):
-    """Submit work to Paperclip as an organizational task.
-
-    Paperclip is deliberately treated as a control/task plane, not as a second
-    executive. Configure JARVIS_PAPERCLIP_URL, JARVIS_PAPERCLIP_TOKEN and
-    JARVIS_PAPERCLIP_COMPANY_ID. An optional agent id can be supplied through
-    JARVIS_PAPERCLIP_AGENT_ID.
-    """
-
     name = "paperclip"
     capabilities = {"org_task", "delegation", "business_management", "heartbeat"}
 
@@ -124,3 +115,40 @@ class PaperclipAdapter(Worker):
 
     def health(self):
         return {"ok": bool(os.getenv("JARVIS_PAPERCLIP_URL") and os.getenv("JARVIS_PAPERCLIP_TOKEN") and os.getenv("JARVIS_PAPERCLIP_COMPANY_ID"))}
+
+
+class AIReceptionistAdapter(Worker):
+    """Optional bridge to a self-hosted AI receptionist project.
+
+    The referenced implementation can handle voice conversations, transfers,
+    messages and calendar booking. JARVIS does not copy its code; it invokes a
+    local command supplied by the operator. Calls are permission-gated by the
+    runtime because the planner marks them as ``external_call``.
+    """
+
+    name = "ai_receptionist"
+    capabilities = {"voice_receptionist", "appointment_booking", "message_taking", "external_call"}
+
+    def score(self, task):
+        return 88 if task.get("step", {}).get("capability") in self.capabilities else 0
+
+    async def run(self, task):
+        raw = os.getenv("JARVIS_RECEPTIONIST_CMD", "")
+        if not raw:
+            return WorkerResult(False, error="AI receptionist not configured; set JARVIS_RECEPTIONIST_CMD")
+        goal = str(task.get("goal") or "")
+        context = task.get("context") or {}
+        payload = json.dumps({"goal": goal, "context": context}, ensure_ascii=False, default=str)
+        command = shlex.split(raw) + [payload]
+        return await _run_command(
+            command,
+            cwd=os.getenv("JARVIS_RECEPTIONIST_CWD") or None,
+            timeout=int(os.getenv("JARVIS_RECEPTIONIST_TIMEOUT", "900")),
+        )
+
+    def health(self):
+        raw = os.getenv("JARVIS_RECEPTIONIST_CMD", "")
+        if not raw:
+            return {"ok": False, "configured": False}
+        command = shlex.split(raw)[0]
+        return {"ok": bool(shutil.which(command)), "configured": True, "command": command}
