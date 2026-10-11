@@ -8,7 +8,7 @@ def main():
     try:
         registry = build_registry()
         names = {worker.name for worker in registry.workers.values()}
-        assert {"phantomops", "browser", "openclaw", "openhands"}.issubset(names), names
+        assert {"phantomops", "browser", "openclaw", "openhands", "ruflo", "paperclip"}.issubset(names), names
         assert "nexus_legacy" not in names, names
 
         # A configured NEXUS root should add the legacy bridge. The test uses
