@@ -10,7 +10,10 @@ from .state import StateStore
 
 class RevenueChainWorker(Worker):
     name = "revenue_chain_fake"
-    capabilities = {"research", "opportunity", "select_target", "proposal", "external_send"}
+    capabilities = {
+        "research", "opportunity", "select_target", "proposal",
+        "crm_sync", "external_send", "followup_automation",
+    }
 
     async def run(self, task):
         capability = task["step"]["capability"]
@@ -48,11 +51,31 @@ class RevenueChainWorker(Worker):
                 "proposal_marker": "proposal-complete",
             })
 
+        if capability == "crm_sync":
+            assert context["company"] == "Acme Clinic"
+            assert context["recipient"] == "owner@acme.example"
+            assert context["proposal"]["total"] == 1500
+            return WorkerResult(True, {
+                "crm_synced": True,
+                "crm_marker": "crm-sync-complete",
+                "crm_id": "crm-acme-001",
+            })
+
         if capability == "external_send":
             assert context["company"] == "Acme Clinic"
             assert context["recipient"] == "owner@acme.example"
             assert context["proposal"]["total"] == 1500
-            return WorkerResult(True, {"sent": True})
+            assert context["crm_synced"] is True
+            return WorkerResult(True, {"sent": True, "send_marker": "send-complete"})
+
+        if capability == "followup_automation":
+            assert context["company"] == "Acme Clinic"
+            assert context["crm_id"] == "crm-acme-001"
+            assert context["sent"] is True
+            return WorkerResult(True, {
+                "followup_scheduled": True,
+                "followup_marker": "followup-complete",
+            })
 
         return WorkerResult(False, error=f"unexpected capability: {capability}")
 
@@ -77,23 +100,30 @@ async def main():
 
     first = await runtime.submit("find revenue opportunities")
     assert first["status"] == "awaiting_approval", first
+    assert set(first["context"]["step_outputs"]) == {"0", "1", "2", "3"}, first
 
-    # The approval pause must preserve every output produced before the send step.
-    ctx = first["context"]
-    assert ctx["research_marker"] == "research-complete", ctx
-    assert ctx["opportunity_marker"] == "opportunity-complete", ctx
-    assert ctx["company"] == "Acme Clinic", ctx
-    assert ctx["recipient"] == "owner@acme.example", ctx
-    assert ctx["selected_target"]["company"] == "Acme Clinic", ctx
-    assert ctx["proposal"]["total"] == 1500, ctx
-    assert set(ctx["step_outputs"]) == {"0", "1", "2", "3"}, ctx
+    # Approval 1: CRM sync. No CRM side effect is executed before approval.
+    crm_approval = first["approval_id"]
+    crm = await runtime.resume(crm_approval, approved=True)
+    assert crm["status"] == "awaiting_approval", crm
+    assert crm["context"]["crm_marker"] == "crm-sync-complete", crm
+    assert crm["context"]["crm_id"] == "crm-acme-001", crm
 
-    # Resume from the exact approval and prove the same context reaches delivery.
-    done = await runtime.resume(first["approval_id"], approved=True)
+    # Approval 2: external proposal delivery.
+    send = await runtime.resume(crm["approval_id"], approved=True)
+    assert send["status"] == "awaiting_approval", send
+    assert send["context"].get("sent") is not True, send
+    assert send["context"]["crm_id"] == "crm-acme-001", send
+
+    # Approval 3: follow-up workflow.
+    done = await runtime.resume(send["approval_id"], approved=True)
     assert done["status"] == "completed", done
     assert done["context"]["company"] == "Acme Clinic", done
     assert done["context"]["recipient"] == "owner@acme.example", done
     assert done["context"]["proposal"]["total"] == 1500, done
+    assert done["context"]["crm_synced"] is True, done
+    assert done["context"]["sent"] is True, done
+    assert done["context"]["followup_scheduled"] is True, done
 
     print("JARVIS-NEXT REVENUE CHAIN OK")
 
