@@ -1,4 +1,6 @@
 # Planner-level vocabulary. Authorization is enforced separately by PermissionEngine.
+from .mission_recipes import build_recipe_plan
+
 ALLOWED_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send","external_call","external_write","workflow_trigger","delegate"}
 CAPABILITIES={
     "research","opportunity","select_target","proposal","external_send","external_call","code","test",
@@ -20,6 +22,9 @@ class MissionPlanner:
         self.model_router=model_router
 
     def deterministic(self,goal):
+        recipe_plan=build_recipe_plan(goal)
+        if recipe_plan is not None:
+            return recipe_plan
         g=goal.lower()
         if any(x in g for x in ("phone","call","receptionist","answer calls","inbound call")):
             steps=[("voice_receptionist","external_call")]
