@@ -6,7 +6,7 @@ class Profile(str,Enum):
 class Decision:
  allowed:bool; requires_approval:bool; reason:str
 class PermissionEngine:
- SAFE={"read","research","analyze","draft","local_file","local_code","test","browser_read"}
+ SAFE={"read","research","analyze","draft","local_file","local_code","test","browser_read","delegate"}
  SENSITIVE={"external_send","publish","purchase","payment","delete","legal_commitment","credential_change"}
  def __init__(self,profile="WORK"): self.profile=Profile(profile)
  def check(self,action):
