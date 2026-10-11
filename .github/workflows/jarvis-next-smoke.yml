@@ -5,10 +5,12 @@ on:
     branches: [jarvis-next]
     paths:
       - "jarvis_next/**"
+      - ".github/workflows/jarvis-next-smoke.yml"
   pull_request:
     branches: [jarvis-next]
     paths:
       - "jarvis_next/**"
+      - ".github/workflows/jarvis-next-smoke.yml"
 
 jobs:
   smoke:
