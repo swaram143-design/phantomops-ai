@@ -1,12 +1,13 @@
 # Planner-level vocabulary. Authorization is enforced separately by PermissionEngine.
-ALLOWED_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send"}
+ALLOWED_ACTIONS={"read","research","analyze","draft","local_file","local_code","test","browser_read","external_send","delegate"}
 CAPABILITIES={
     "research","opportunity","select_target","proposal","external_send","code","test",
     "browser","research_online","computer","channels","persistent_assistant","software_engineering",
     "legacy_agent","lead","proposal_delivery","email_outreach","followup","analytics",
     "marketplace_mining","marketplace_bidding","live_marketplace","outreach_draft","campaign",
     "inbox_monitor","autonomous_followup","crm_sanitizer","learning_feedback","lead_intelligence",
-    "executive_report","govi",
+    "executive_report","govi","swarm","learning","multi_agent","analysis","org_task",
+    "delegation","business_management","heartbeat",
 }
 
 class PlanValidationError(ValueError):
@@ -20,6 +21,10 @@ class MissionPlanner:
         g=goal.lower()
         if any(x in g for x in ("revenue","income","client","lead","customer","prospect")):
             steps=[("research","research"),("opportunity","analyze"),("select_target","analyze"),("proposal","draft"),("external_send","external_send")]
+        elif any(x in g for x in ("swarm","multi-agent","multi agent","ruflo","parallel agents")):
+            steps=[("swarm","research")]
+        elif any(x in g for x in ("delegate","delegation","paperclip","assign agent","agent team")):
+            steps=[("org_task","delegate")]
         elif any(x in g for x in ("code","build","fix","github","software")):
             steps=[("code","local_code"),("test","test")]
         elif any(x in g for x in ("browser","website","search","find","research online","navigate")):
