@@ -17,6 +17,9 @@ class Worker:
     async def run(self, task):
         raise NotImplementedError
 
+    def health(self):
+        return {"ok": True, "worker": self.name}
+
 class WorkerRegistry:
     def __init__(self):
         self.workers = {}
@@ -34,3 +37,12 @@ class WorkerRegistry:
     def choose(self, capability, task=None):
         candidates = self.ranked(capability, task)
         return candidates[0] if candidates else None
+
+    def health(self):
+        results = {}
+        for name, worker in self.workers.items():
+            try:
+                results[name] = worker.health()
+            except Exception as exc:
+                results[name] = {"ok": False, "error": str(exc)}
+        return results
