@@ -4,7 +4,8 @@ JARVIS remains the authority layer. External projects are execution workers:
 - Paperclip: organizational control/task plane.
 - Ruflo: swarm/routing/learning execution harness.
 - AIReceptionist: optional voice/telephony execution backend.
-- n8n: workflow/integration execution backend (CRM, email, webhooks, etc.).
+- n8n: workflow/integration execution backend.
+- Twenty: optional open-source CRM execution backend.
 
 External projects are invoked as workers; JARVIS owns planning, state and
 permission decisions.
@@ -111,18 +112,10 @@ class AIReceptionistAdapter(Worker):
 
 
 class N8NAdapter(Worker):
-    """Trigger an n8n webhook as JARVIS's integration/workflow worker.
-
-    n8n can then connect the mission to CRM, email, spreadsheets, messaging,
-    databases and other services without duplicating those integrations inside
-    JARVIS. The webhook remains behind JARVIS permission checks.
-    """
     name = "n8n"
     capabilities = {"workflow_automation", "crm_sync", "integration", "followup_automation"}
-
     def score(self, task):
         return 86 if task.get("step", {}).get("capability") in self.capabilities else 0
-
     async def run(self, task):
         url = os.getenv("JARVIS_N8N_WEBHOOK_URL", "")
         if not url:
@@ -143,6 +136,58 @@ class N8NAdapter(Worker):
             return WorkerResult(False, error=f"n8n HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
         except Exception as exc:
             return WorkerResult(False, error=str(exc), retryable=True)
-
     def health(self):
         return {"ok": bool(os.getenv("JARVIS_N8N_WEBHOOK_URL")), "configured": bool(os.getenv("JARVIS_N8N_WEBHOOK_URL"))}
+
+
+class TwentyAdapter(Worker):
+    """Optional Twenty CRM backend.
+
+    Twenty exposes workspace-specific REST and GraphQL APIs. JARVIS sends a
+    normalized CRM payload to a configurable REST path; Twenty remains the CRM
+    implementation and JARVIS remains responsible for permission checks.
+    """
+    name = "twenty"
+    capabilities = {"crm_sync", "integration"}
+
+    def score(self, task):
+        return 92 if task.get("step", {}).get("capability") in self.capabilities else 0
+
+    async def run(self, task):
+        base = os.getenv("JARVIS_TWENTY_URL", "").rstrip("/")
+        token = os.getenv("JARVIS_TWENTY_API_KEY", "")
+        path = os.getenv("JARVIS_TWENTY_CRM_PATH", "/rest/companies")
+        if not (base and token):
+            return WorkerResult(False, error="Twenty not configured; set JARVIS_TWENTY_URL/JARVIS_TWENTY_API_KEY")
+        context = task.get("context", {}) or {}
+        target = context.get("selected_target") or {}
+        payload = {
+            "name": context.get("company") or target.get("company") or "JARVIS lead",
+            "email": context.get("recipient") or target.get("email"),
+            "source": "JARVIS",
+            "goal": task.get("goal"),
+            "need": context.get("need") or target.get("need"),
+            "score": context.get("selection_score") or target.get("score"),
+        }
+        payload = {k: v for k, v in payload.items() if v is not None}
+        request = urllib.request.Request(
+            f"{base}{path}",
+            data=json.dumps(payload, ensure_ascii=False, default=str).encode(),
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            method=os.getenv("JARVIS_TWENTY_METHOD", "POST").upper(),
+        )
+        try:
+            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(os.getenv("JARVIS_TWENTY_TIMEOUT", "30")))
+            body = response.read().decode("utf-8", errors="replace")
+            try: parsed: Any = json.loads(body)
+            except json.JSONDecodeError: parsed = {"raw": body}
+            return WorkerResult(True, parsed)
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            return WorkerResult(False, error=f"Twenty HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
+        except Exception as exc:
+            return WorkerResult(False, error=str(exc), retryable=True)
+
+    def health(self):
+        configured = bool(os.getenv("JARVIS_TWENTY_URL") and os.getenv("JARVIS_TWENTY_API_KEY"))
+        return {"ok": configured, "configured": configured, "base_url": bool(os.getenv("JARVIS_TWENTY_URL")), "api_key": bool(os.getenv("JARVIS_TWENTY_API_KEY"))}
