@@ -22,8 +22,8 @@ def main():
         assert plan["steps"][0]["capability"] == expected, (goal, plan)
 
     # Worker scoring must expose the external ecosystem without executing it.
-    assert registry.find("ruflo").score({"step": {"capability": "swarm"}}) > 0
-    assert registry.find("paperclip").score({"step": {"capability": "org_task"}}) > 0
+    assert registry.workers["ruflo"].score({"step": {"capability": "swarm"}}) > 0
+    assert registry.workers["paperclip"].score({"step": {"capability": "org_task"}}) > 0
     print("JARVIS-NEXT ECOSYSTEM REGISTRY OK")
 
 
