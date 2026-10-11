@@ -18,11 +18,20 @@ class AlwaysFail(Worker):
     async def run(self,t): return WorkerResult(False,error='permanent failure')
 
 class Fake(Worker):
-    name='fake'; capabilities={'research','browser','opportunity','select_target','proposal','external_send'}
+    name='fake'; capabilities={
+        'research','browser','opportunity','select_target','proposal',
+        'crm_sync','external_send','followup_automation'
+    }
     def score(self,task): return 10
     async def run(self,t):
-        if t['step']['capability']=='research' and t['attempt']==1 and t['goal']=='retry test': return WorkerResult(False,error='temporary timeout',retryable=True)
+        if t['step']['capability']=='research' and t['attempt']==1 and t['goal']=='retry test':
+            return WorkerResult(False,error='temporary timeout',retryable=True)
         return WorkerResult(True,{'ok':True,'echo':t['step']['capability']})
+
+async def approve_until_complete(runtime, response):
+    while response['status']=='awaiting_approval':
+        response=await runtime.resume(response['approval_id'],approved=True)
+    return response
 
 async def main():
     # Smoke tests must exercise the deterministic planner unless a test
@@ -40,7 +49,9 @@ async def main():
         assert x.state.conn.execute('SELECT COUNT(*) FROM approvals WHERE mission_id=?',(a['mission_id'],)).fetchone()[0]==1
         resumed=await x.resume_mission(a['mission_id'])
         assert resumed['status']=='awaiting_approval' and resumed['approval_id']==a['approval_id'],resumed
-        assert (await x.resume(a['approval_id'],approved=True))['status']=='completed'
+        completed=await approve_until_complete(x,resumed)
+        assert completed['status']=='completed',completed
+        assert len(completed['results'])==7,completed
         research=await x.submit('research opportunities')
         assert research['status']=='completed',research
         r2=WorkerRegistry(); r2.register(AlwaysFail()); r2.register(Fallback())
