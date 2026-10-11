@@ -38,3 +38,5 @@ jobs:
         run: python -m jarvis_next.mission_recipes_test
       - name: Run durable revenue approval resume test
         run: python -m jarvis_next.revenue_runtime_test
+      - name: Run real adapter integration test
+        run: python -m jarvis_next.real_adapter_integration_test
