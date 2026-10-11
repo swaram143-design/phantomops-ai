@@ -12,7 +12,7 @@ class Decision:
 
 class PermissionEngine:
     SAFE={"read","research","analyze","draft","local_file","local_code","test","browser_read","delegate"}
-    SENSITIVE={"external_send","external_call","publish","purchase","payment","delete","legal_commitment","credential_change"}
+    SENSITIVE={"external_send","external_call","external_write","workflow_trigger","publish","purchase","payment","delete","legal_commitment","credential_change"}
 
     def __init__(self,profile="WORK"):
         self.profile=Profile(profile)
