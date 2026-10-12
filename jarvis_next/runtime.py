@@ -66,9 +66,10 @@ class JarvisRuntime:
             step_done=False
             for worker in workers:
                 key=f"{i}:{worker.name}"; attempt=attempts.get(key,0)
+                execution_key=f"{mid}:{i}:{worker.name}"
                 while attempt < self.max_retries+1:
                     attempt+=1; attempts[key]=attempt
-                    try: result=await worker.run({**task,"attempt":attempt})
+                    try: result=await worker.run({**task,"attempt":attempt,"idempotency_key":execution_key})
                     except Exception as e: result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
                     verified,verification_error=self._verify(step,result)
                     if verified:
