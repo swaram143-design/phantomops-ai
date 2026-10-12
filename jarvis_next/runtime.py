@@ -112,16 +112,18 @@ class JarvisRuntime:
         a=self.state.get_approval(approval_id)
         if not a: raise KeyError(approval_id)
         if a["status"]!="pending": return {"mission_id":a["mission_id"],"status":a["status"],"approval_id":approval_id}
-        resolved=self.state.resolve_approval(approval_id,"approved" if approved else "rejected")
-        if resolved is None:
-            current=self.state.get_approval(approval_id); return {"mission_id":a["mission_id"],"status":current["status"],"approval_id":approval_id}
-        mid=a["mission_id"]; m=self.state.get_mission(mid); payload=json.loads(a["payload"]); plan=json.loads(m["plan"])
-        if not approved:
-            result={"mission_id":mid,"status":"rejected","approval_id":approval_id}; self.state.update(mid,"rejected",plan=plan,result=result); return result
+        mid=a["mission_id"]
         owner=str(uuid.uuid4())
         if not self.state.claim_mission(mid,owner,statuses=("awaiting_approval","running","retrying","blocked")):
-            current=self.state.get_mission(mid); return {"mission_id":mid,"status":"already_running","approval_id":approval_id,"current_status":current["status"] if current else None}
+            current=self.state.get_mission(mid)
+            return {"mission_id":mid,"status":"already_running","approval_id":approval_id,"current_status":current["status"] if current else None}
         try:
+            resolved=self.state.resolve_approval(approval_id,"approved" if approved else "rejected")
+            if resolved is None:
+                current=self.state.get_approval(approval_id); return {"mission_id":mid,"status":current["status"],"approval_id":approval_id}
+            m=self.state.get_mission(mid); payload=json.loads(a["payload"]); plan=json.loads(m["plan"])
+            if not approved:
+                result={"mission_id":mid,"status":"rejected","approval_id":approval_id}; self._update(mid,owner,status="rejected",plan=plan,result=result); return result
             return await self._run_owned(mid,m["goal"],plan,payload.get("context",{}),owner,start_index=payload.get("step_index",0),approval_id=approval_id,approved_step=payload.get("step_index"),results=payload.get("results",[]),attempts=payload.get("attempts",{}))
         finally: self.state.release_mission(mid,owner)
 
