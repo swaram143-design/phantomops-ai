@@ -36,15 +36,20 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         self.event("mission.created",{"goal":goal},mid)
         return mid
 
-    def update(self,mid,status=None,plan=None,result=None):
+    def update(self,mid,status=None,plan=None,result=None,lease_owner=None):
         row=self.conn.execute("SELECT * FROM missions WHERE id=?",(mid,)).fetchone()
         if not row: raise KeyError(mid)
-        self.conn.execute("UPDATE missions SET status=?,plan=?,result=?,updated_at=? WHERE id=?",
-            (status or row["status"],
-             json.dumps(plan,default=str) if plan is not None else row["plan"],
-             json.dumps(result,default=str) if result is not None else row["result"],
-             self.now(),mid))
+        values=(status or row["status"],
+                json.dumps(plan,default=str) if plan is not None else row["plan"],
+                json.dumps(result,default=str) if result is not None else row["result"],
+                self.now(),mid)
+        if lease_owner is None:
+            cursor=self.conn.execute("UPDATE missions SET status=?,plan=?,result=?,updated_at=? WHERE id=?",values)
+        else:
+            cursor=self.conn.execute("UPDATE missions SET status=?,plan=?,result=?,updated_at=? WHERE id=? AND lease_owner=?",values+(lease_owner,))
         self.conn.commit()
+        if lease_owner is not None and cursor.rowcount == 0:
+            raise RuntimeError("mission lease lost")
         self.event("mission.updated",{"status":status},mid)
 
     def get_mission(self,mid):
@@ -66,6 +71,18 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         self.conn.commit()
         if cursor.rowcount:
             self.event("mission.lease_claimed",{"owner":owner,"expires_at":expires},mid)
+            return True
+        return False
+
+    def renew_mission(self,mid,owner,lease_seconds=None):
+        if lease_seconds is None: lease_seconds=float(settings.mission_lease_seconds)
+        now=datetime.now(timezone.utc); expires=(now+timedelta(seconds=lease_seconds)).isoformat()
+        cursor=self.conn.execute(
+            "UPDATE missions SET lease_expires_at=?,updated_at=? WHERE id=? AND lease_owner=?",
+            (expires,now.isoformat(),mid,owner)
+        )
+        self.conn.commit()
+        if cursor.rowcount:
             return True
         return False
 
