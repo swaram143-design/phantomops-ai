@@ -10,7 +10,9 @@ class StateStore:
         self.conn.row_factory=sqlite3.Row
         self.conn.executescript("""CREATE TABLE IF NOT EXISTS missions(id TEXT PRIMARY KEY,goal TEXT,status TEXT,plan TEXT,result TEXT,created_at TEXT,updated_at TEXT);
 CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT,mission_id TEXT,kind TEXT,payload TEXT,created_at TEXT);
-CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY,mission_id TEXT,action TEXT,payload TEXT,status TEXT,created_at TEXT,resolved_at TEXT);""")
+CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY,mission_id TEXT,action TEXT,payload TEXT,status TEXT,created_at TEXT,resolved_at TEXT);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pending_approval_dedupe
+ON approvals(mission_id,action,payload) WHERE status='pending';""")
         self.conn.commit()
 
     def now(self): return datetime.now(timezone.utc).isoformat()
@@ -51,8 +53,8 @@ CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY,mission_id TEXT,action 
 
     def approval(self,mid,action,payload):
         # JARVIS-NEXT is the canonical approval authority. Reuse an existing
-        # pending approval for the same mission/step instead of creating
-        # duplicate approval requests after retries or process restarts.
+        # pending approval for the same mission/action/payload. The partial
+        # unique index makes this invariant safe across concurrent processes.
         marker=json.dumps(payload,sort_keys=True,default=str)
         existing=self.conn.execute(
             "SELECT * FROM approvals WHERE mission_id=? AND action=? AND status='pending' ORDER BY created_at DESC LIMIT 1",
@@ -62,9 +64,19 @@ CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY,mission_id TEXT,action 
             return existing["id"]
 
         aid=str(uuid.uuid4())
-        self.conn.execute("INSERT INTO approvals VALUES(?,?,?,?,?,?,?)",
-            (aid,mid,action,marker,"pending",self.now(),None))
-        self.conn.commit()
+        try:
+            self.conn.execute("INSERT INTO approvals VALUES(?,?,?,?,?,?,?)",
+                (aid,mid,action,marker,"pending",self.now(),None))
+            self.conn.commit()
+        except sqlite3.IntegrityError:
+            self.conn.rollback()
+            existing=self.conn.execute(
+                "SELECT * FROM approvals WHERE mission_id=? AND action=? AND payload=? AND status='pending' LIMIT 1",
+                (mid,action,marker)
+            ).fetchone()
+            if existing:
+                return existing["id"]
+            raise
         self.event("approval.requested",{"approval_id":aid,"action":action},mid)
         return aid
 
