@@ -92,7 +92,8 @@ class JarvisRuntime:
     async def resume_mission(self,mid):
         m=self.state.get_mission(mid)
         if not m: raise KeyError(mid)
-        if m["status"]=="completed": return {"mission_id":mid,"status":"completed"}
+        if m["status"] in ("completed","failed","rejected"):
+            return {"mission_id":mid,"status":m["status"]}
         if not m["plan"] or not m["result"]: raise ValueError("Mission has no resumable execution state")
         plan=json.loads(m["plan"]); state=json.loads(m["result"])
         return await self._run(mid,m["goal"],plan,state.get("context",{}),state.get("next_step",0),results=state.get("results",[]),attempts=state.get("attempts",{}))
