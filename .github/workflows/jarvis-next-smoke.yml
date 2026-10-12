@@ -31,6 +31,8 @@ jobs:
           python -c "import jarvis_next; print('jarvis_next', jarvis_next.__version__)"
       - name: Run JARVIS-NEXT smoke test
         run: python -m jarvis_next.smoke_test
+      - name: Run state event atomicity contract test
+        run: python -m jarvis_next.state_event_atomicity_contract_test
       - name: Run bootstrap contract test
         run: python -m jarvis_next.bootstrap_contract_test
       - name: Run ecosystem registry contract test
