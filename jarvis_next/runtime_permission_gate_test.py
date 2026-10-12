@@ -50,6 +50,13 @@ def main():
             assert approval["status"] == "pending"
             assert approval["action"] == "external_send"
 
+            resumed = await runtime.resume(result["approval_id"], approved=True)
+            assert resumed["status"] == "completed"
+            assert sender.calls == 1, "approved external action must execute exactly once"
+
+            approval = state.get_approval(result["approval_id"])
+            assert approval["status"] == "approved"
+
     asyncio.run(run())
     print("JARVIS-NEXT RUNTIME PERMISSION GATE OK")
 
