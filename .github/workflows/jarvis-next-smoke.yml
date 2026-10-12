@@ -49,12 +49,14 @@ jobs:
         run: python -m jarvis_next.planner_side_effect_contract_test
       - name: Run planner invalid-model fallback contract test
         run: python -m jarvis_next.planner_fallback_contract_test
+      - name: Run planner failure persistence contract test
+        run: python -m jarvis_next.planner_failure_contract_test
       - name: Run runtime permission gate contract test
         run: python -m jarvis_next.runtime_permission_gate_test
       - name: Run approval rejection contract test
         run: python -m jarvis_next.approval_rejection_contract_test
       - name: Run approval deduplication contract test
-        run: python -m jarvis_next.approval_dedup_contract_test
+        run: python -m jarvis_next.approval_deduplication_contract_test
       - name: Run result verifier contract test
         run: python -m jarvis_next.result_verifier_contract_test
       - name: Run durable completed-mission resume contract test
