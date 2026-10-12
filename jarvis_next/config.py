@@ -11,6 +11,7 @@ class Settings:
     browser_backend:str=os.getenv("JARVIS_BROWSER_BACKEND","native")
     max_retries:int=int(os.getenv("JARVIS_MAX_RETRIES","2"))
     retry_delay:float=float(os.getenv("JARVIS_RETRY_DELAY","1"))
+    mission_lease_seconds:float=float(os.getenv("JARVIS_MISSION_LEASE_SECONDS","300"))
     nexus_root:str=os.getenv("NEXUS_ROOT","")
 
 settings=Settings()
