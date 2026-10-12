@@ -59,6 +59,8 @@ jobs:
         run: python -m jarvis_next.runtime_resume_contract_test
       - name: Run runtime worker fallback contract test
         run: python -m jarvis_next.runtime_fallback_contract_test
+      - name: Run durable restart resume contract test
+        run: python -m jarvis_next.runtime_restart_resume_contract_test
       - name: Run mission recipe contract test
         run: python -m jarvis_next.mission_recipes_test
       - name: Run durable revenue approval resume test
