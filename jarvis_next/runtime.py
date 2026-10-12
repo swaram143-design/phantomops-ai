@@ -91,7 +91,10 @@ class JarvisRuntime:
         a=self.state.get_approval(approval_id)
         if not a: raise KeyError(approval_id)
         if a["status"]!="pending": return {"mission_id":a["mission_id"],"status":a["status"],"approval_id":approval_id}
-        self.state.resolve_approval(approval_id,"approved" if approved else "rejected")
+        resolved=self.state.resolve_approval(approval_id,"approved" if approved else "rejected")
+        if resolved is None:
+            current=self.state.get_approval(approval_id)
+            return {"mission_id":a["mission_id"],"status":current["status"],"approval_id":approval_id}
         mid=a["mission_id"]; m=self.state.get_mission(mid); payload=json.loads(a["payload"]); plan=json.loads(m["plan"])
         if not approved:
             result={"mission_id":mid,"status":"rejected","approval_id":approval_id}; self.state.update(mid,"rejected",plan=plan,result=result); return result
