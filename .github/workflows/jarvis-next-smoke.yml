@@ -53,6 +53,8 @@ jobs:
         run: python -m jarvis_next.runtime_permission_gate_test
       - name: Run approval rejection contract test
         run: python -m jarvis_next.approval_rejection_contract_test
+      - name: Run result verifier contract test
+        run: python -m jarvis_next.result_verifier_contract_test
       - name: Run mission recipe contract test
         run: python -m jarvis_next.mission_recipes_test
       - name: Run durable revenue approval resume test
