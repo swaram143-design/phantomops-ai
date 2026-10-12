@@ -120,7 +120,10 @@ class JarvisRuntime:
             return {"mission_id":mid,"status":m["status"]}
         if m["status"]=="awaiting_approval":
             pending=self.state.pending_approval(mid)
-            return {"mission_id":mid,"status":"awaiting_approval","approval_id":pending["id"] if pending else None}
+            if not pending:
+                return {"mission_id":mid,"status":"awaiting_approval","approval_id":None}
+            payload=json.loads(pending["payload"])
+            return {"mission_id":mid,"status":"awaiting_approval","approval_id":pending["id"],"step":payload.get("step"),"step_index":payload.get("step_index"),"results":payload.get("results",[]),"context":payload.get("context",{})}
         if not m["plan"] or not m["result"]: raise ValueError("Mission has no resumable execution state")
         owner=str(uuid.uuid4())
         if not self.state.claim_mission(mid,owner):
