@@ -53,9 +53,6 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         return [dict(r) for r in rows]
 
     def approval(self,mid,action,payload):
-        # JARVIS-NEXT is the canonical approval authority. Reuse an existing
-        # pending approval for the same mission/action/payload. The partial
-        # unique index makes this invariant safe across concurrent processes.
         marker=json.dumps(payload,sort_keys=True,default=str)
         existing=self.conn.execute(
             "SELECT * FROM approvals WHERE mission_id=? AND action=? AND status='pending' ORDER BY created_at DESC LIMIT 1",
@@ -63,7 +60,6 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         ).fetchone()
         if existing and json.dumps(json.loads(existing["payload"]),sort_keys=True,default=str)==marker:
             return existing["id"]
-
         aid=str(uuid.uuid4())
         try:
             self.conn.execute("INSERT INTO approvals VALUES(?,?,?,?,?,?,?)",
@@ -89,10 +85,12 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         if status not in ("approved","rejected"): raise ValueError(status)
         row=self.get_approval(aid)
         if not row: raise KeyError(aid)
-        if row["status"]!="pending":
-            return row
-        self.conn.execute("UPDATE approvals SET status=?,resolved_at=? WHERE id=?",
-            (status,self.now(),aid))
+        cursor=self.conn.execute(
+            "UPDATE approvals SET status=?,resolved_at=? WHERE id=? AND status='pending'",
+            (status,self.now(),aid)
+        )
         self.conn.commit()
+        if cursor.rowcount == 0:
+            return None
         self.event("approval.resolved",{"approval_id":aid,"status":status},row["mission_id"])
         return self.get_approval(aid)
