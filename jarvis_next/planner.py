@@ -14,6 +14,16 @@ CAPABILITIES={
     "workflow_automation","crm_sync","integration","followup_automation",
 }
 
+# Keep planner output semantically aligned with the worker capability when an
+# action can cause an external side effect. PermissionEngine still provides
+# the independent approval gate at execution time.
+SENSITIVE_CAPABILITY_RULES={
+    "external_send":{"external_send"},
+    "external_call":{"external_call","voice_receptionist","appointment_booking","message_taking"},
+    "external_write":{"crm_sync","integration"},
+    "workflow_trigger":{"workflow_automation","crm_sync","integration","followup_automation"},
+}
+
 class PlanValidationError(ValueError):
     pass
 
@@ -58,6 +68,9 @@ class MissionPlanner:
                 raise PlanValidationError(f"unknown capability: {capability}")
             if action not in ALLOWED_ACTIONS:
                 raise PlanValidationError(f"unknown or disallowed action: {action}")
+            allowed_capabilities=SENSITIVE_CAPABILITY_RULES.get(action)
+            if allowed_capabilities is not None and capability not in allowed_capabilities:
+                raise PlanValidationError(f"action {action} is incompatible with capability {capability}")
             normalized.append({"capability":capability,"action":action})
         return {"goal":goal,"steps":normalized,"source":plan.get("source","model")}
 
