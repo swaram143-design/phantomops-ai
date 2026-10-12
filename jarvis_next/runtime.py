@@ -1,4 +1,4 @@
-import asyncio,json
+import asyncio,json,uuid
 from .state import StateStore
 from .permissions import PermissionEngine
 from .planner import MissionPlanner
@@ -95,16 +95,34 @@ class JarvisRuntime:
         if resolved is None:
             current=self.state.get_approval(approval_id)
             return {"mission_id":a["mission_id"],"status":current["status"],"approval_id":approval_id}
-        mid=a["mission_id"]; m=self.state.get_mission(mid); payload=json.loads(a["payload"]); plan=json.loads(m["plan"])
+        mid=a["mission_id"]
+        m=self.state.get_mission(mid); payload=json.loads(a["payload"]); plan=json.loads(m["plan"])
         if not approved:
             result={"mission_id":mid,"status":"rejected","approval_id":approval_id}; self.state.update(mid,"rejected",plan=plan,result=result); return result
-        return await self._run(mid,m["goal"],plan,payload.get("context",{}),payload["step_index"],approval_id,payload["step_index"],payload.get("results",[]),payload.get("attempts",{}))
+        owner=str(uuid.uuid4())
+        if not self.state.claim_mission(mid,owner,statuses=("awaiting_approval","running","retrying","blocked")):
+            current=self.state.get_mission(mid)
+            return {"mission_id":mid,"status":"already_running","approval_id":approval_id,"current_status":current["status"] if current else None}
+        try:
+            return await self._run(mid,m["goal"],plan,payload.get("context",{}),payload["step_index"],approval_id,payload["step_index"],payload.get("results",[]),payload.get("attempts",{}))
+        finally:
+            self.state.release_mission(mid,owner)
 
     async def resume_mission(self,mid):
         m=self.state.get_mission(mid)
         if not m: raise KeyError(mid)
         if m["status"] in ("completed","failed","rejected"):
             return {"mission_id":mid,"status":m["status"]}
+        if m["status"]=="awaiting_approval":
+            pending=self.state.pending_approval(mid)
+            return {"mission_id":mid,"status":"awaiting_approval","approval_id":pending["id"] if pending else None}
         if not m["plan"] or not m["result"]: raise ValueError("Mission has no resumable execution state")
-        plan=json.loads(m["plan"]); state=json.loads(m["result"])
-        return await self._run(mid,m["goal"],plan,state.get("context",{}),state.get("next_step",0),results=state.get("results",[]),attempts=state.get("attempts",{}))
+        owner=str(uuid.uuid4())
+        if not self.state.claim_mission(mid,owner):
+            current=self.state.get_mission(mid)
+            return {"mission_id":mid,"status":"already_running","current_status":current["status"] if current else None}
+        try:
+            m=self.state.get_mission(mid); plan=json.loads(m["plan"]); state=json.loads(m["result"])
+            return await self._run(mid,m["goal"],plan,state.get("context",{}),state.get("next_step",0),results=state.get("results",[]),attempts=state.get("attempts",{}))
+        finally:
+            self.state.release_mission(mid,owner)
