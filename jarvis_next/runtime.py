@@ -88,7 +88,11 @@ class JarvisRuntime:
 
     async def _run_owned(self,mid,goal,plan,ctx,owner,**kwargs):
         stop=asyncio.Event(); heartbeat=asyncio.create_task(self._lease_heartbeat(mid,owner,stop))
-        try: return await self._run(mid,goal,plan,ctx,lease_owner=owner,**kwargs)
+        try:
+            try: return await self._run(mid,goal,plan,ctx,lease_owner=owner,**kwargs)
+            except RuntimeError as e:
+                if str(e) != "mission lease lost": raise
+                return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost"}
         finally:
             stop.set(); await heartbeat
 
