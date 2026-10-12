@@ -32,7 +32,10 @@ class WorkerRegistry:
 
     def ranked(self, capability, task=None):
         task = task or {}
-        return sorted(self.find(capability), key=lambda w: (w.score(task), w.name), reverse=True)
+        # Preserve registration order when workers have equal scores.
+        # This keeps explicit primary -> fallback registration deterministic
+        # instead of using worker names as an implicit tie-breaker.
+        return sorted(self.find(capability), key=lambda w: w.score(task), reverse=True)
 
     def choose(self, capability, task=None):
         candidates = self.ranked(capability, task)
