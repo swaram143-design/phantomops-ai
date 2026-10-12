@@ -1,5 +1,5 @@
 import json,os,sqlite3,uuid
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
 from .config import settings
 
 class StateStore:
@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT,mission_i
 CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY,mission_id TEXT,action TEXT,payload TEXT,status TEXT,created_at TEXT,resolved_at TEXT);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_pending_approval_dedupe
 ON approvals(mission_id,action,payload) WHERE status='pending';""")
+        columns={row[1] for row in self.conn.execute("PRAGMA table_info(missions)").fetchall()}
+        if "lease_owner" not in columns:
+            self.conn.execute("ALTER TABLE missions ADD COLUMN lease_owner TEXT")
+        if "lease_expires_at" not in columns:
+            self.conn.execute("ALTER TABLE missions ADD COLUMN lease_expires_at TEXT")
         self.conn.commit()
 
     def now(self): return datetime.now(timezone.utc).isoformat()
@@ -25,8 +30,8 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
 
     def create_mission(self,goal):
         mid=str(uuid.uuid4()); n=self.now()
-        self.conn.execute("INSERT INTO missions VALUES(?,?,?,?,?,?,?)",
-            (mid,goal,"queued",None,None,n,n))
+        self.conn.execute("INSERT INTO missions(id,goal,status,plan,result,created_at,updated_at,lease_owner,lease_expires_at) VALUES(?,?,?,?,?,?,?,?,?)",
+            (mid,goal,"queued",None,None,n,n,None,None))
         self.conn.commit()
         self.event("mission.created",{"goal":goal},mid)
         return mid
@@ -45,6 +50,31 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
     def get_mission(self,mid):
         row=self.conn.execute("SELECT * FROM missions WHERE id=?",(mid,)).fetchone()
         return dict(row) if row else None
+
+    def claim_mission(self,mid,owner,lease_seconds=None):
+        if lease_seconds is None: lease_seconds=float(settings.mission_lease_seconds)
+        now=datetime.now(timezone.utc); expires=(now+timedelta(seconds=lease_seconds)).isoformat()
+        cursor=self.conn.execute(
+            "UPDATE missions SET lease_owner=?,lease_expires_at=?,updated_at=? "
+            "WHERE id=? AND status IN ('running','retrying','blocked') "
+            "AND (lease_owner IS NULL OR lease_expires_at IS NULL OR lease_expires_at<=?)",
+            (owner,expires,now.isoformat(),mid,now.isoformat())
+        )
+        self.conn.commit()
+        if cursor.rowcount:
+            self.event("mission.lease_claimed",{"owner":owner,"expires_at":expires},mid)
+            return True
+        return False
+
+    def release_mission(self,mid,owner):
+        cursor=self.conn.execute(
+            "UPDATE missions SET lease_owner=NULL,lease_expires_at=NULL,updated_at=? WHERE id=? AND lease_owner=?",
+            (self.now(),mid,owner)
+        )
+        self.conn.commit()
+        if cursor.rowcount:
+            self.event("mission.lease_released",{"owner":owner},mid)
+        return bool(cursor.rowcount)
 
     def list_resumable(self):
         rows=self.conn.execute(
