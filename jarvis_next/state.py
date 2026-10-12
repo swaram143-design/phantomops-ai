@@ -51,14 +51,17 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         row=self.conn.execute("SELECT * FROM missions WHERE id=?",(mid,)).fetchone()
         return dict(row) if row else None
 
-    def claim_mission(self,mid,owner,lease_seconds=None):
+    def claim_mission(self,mid,owner,lease_seconds=None,statuses=None):
         if lease_seconds is None: lease_seconds=float(settings.mission_lease_seconds)
+        statuses=tuple(statuses or ("running","retrying","blocked"))
+        if not statuses: return False
+        placeholders=",".join("?" for _ in statuses)
         now=datetime.now(timezone.utc); expires=(now+timedelta(seconds=lease_seconds)).isoformat()
         cursor=self.conn.execute(
-            "UPDATE missions SET lease_owner=?,lease_expires_at=?,updated_at=? "
-            "WHERE id=? AND status IN ('running','retrying','blocked') "
+            f"UPDATE missions SET lease_owner=?,lease_expires_at=?,updated_at=? "
+            f"WHERE id=? AND status IN ({placeholders}) "
             "AND (lease_owner IS NULL OR lease_expires_at IS NULL OR lease_expires_at<=?)",
-            (owner,expires,now.isoformat(),mid,now.isoformat())
+            (owner,expires,now.isoformat(),mid,*statuses,now.isoformat())
         )
         self.conn.commit()
         if cursor.rowcount:
