@@ -35,7 +35,8 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         if not row: raise KeyError(mid)
         values=(status or row["status"],json.dumps(plan,default=str) if plan is not None else row["plan"],json.dumps(result,default=str) if result is not None else row["result"],self.now(),mid)
         if lease_owner is None: cursor=self.conn.execute("UPDATE missions SET status=?,plan=?,result=?,updated_at=? WHERE id=?",values)
-        else: cursor=self.conn.execute("UPDATE missions SET status=?,plan=?,result=?,updated_at=? WHERE id=? AND lease_owner=?",values+(lease_owner,))
+        else:
+            cursor=self.conn.execute("UPDATE missions SET status=?,plan=?,result=?,updated_at=? WHERE id=? AND lease_owner=? AND lease_expires_at>?",values+(lease_owner,self.now()))
         self.conn.commit()
         if lease_owner is not None and cursor.rowcount == 0: raise RuntimeError("mission lease lost")
         self.event("mission.updated",{"status":status},mid)
@@ -63,7 +64,7 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
     def renew_mission(self,mid,owner,lease_seconds=None):
         if lease_seconds is None: lease_seconds=float(settings.mission_lease_seconds)
         now=datetime.now(timezone.utc); expires=(now+timedelta(seconds=lease_seconds)).isoformat()
-        cursor=self.conn.execute("UPDATE missions SET lease_expires_at=?,updated_at=? WHERE id=? AND lease_owner=?",(expires,now.isoformat(),mid,owner))
+        cursor=self.conn.execute("UPDATE missions SET lease_expires_at=?,updated_at=? WHERE id=? AND lease_owner=? AND lease_expires_at>?",(expires,now.isoformat(),mid,owner,now.isoformat()))
         self.conn.commit(); return bool(cursor.rowcount)
 
     def release_mission(self,mid,owner):
