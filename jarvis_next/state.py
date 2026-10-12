@@ -110,6 +110,13 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         self.event("approval.requested",{"approval_id":aid,"action":action},mid)
         return aid
 
+    def pending_approval(self,mid):
+        row=self.conn.execute(
+            "SELECT * FROM approvals WHERE mission_id=? AND status='pending' ORDER BY created_at DESC LIMIT 1",
+            (mid,)
+        ).fetchone()
+        return dict(row) if row else None
+
     def get_approval(self,aid):
         row=self.conn.execute("SELECT * FROM approvals WHERE id=?",(aid,)).fetchone()
         return dict(row) if row else None
