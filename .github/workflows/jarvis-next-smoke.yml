@@ -1,5 +1,6 @@
 name: JARVIS-NEXT Smoke Test
 
+# Smoke workflow for the jarvis-next runtime contract suite.
 on:
   workflow_dispatch:
   push:
