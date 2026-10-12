@@ -85,7 +85,12 @@ class JarvisRuntime:
             self.state.event("mission.planning_failed",{"error":error},mid)
             return result
         self.state.update(mid,"running",plan=plan,result={"next_step":0,"context":ctx,"results":[],"attempts":{}})
-        return await self._run(mid,goal,plan,ctx,0)
+        owner=str(uuid.uuid4())
+        self.state.claim_mission(mid,owner,statuses=("running",))
+        try:
+            return await self._run(mid,goal,plan,ctx,0)
+        finally:
+            self.state.release_mission(mid,owner)
 
     async def resume(self,approval_id,approved=True):
         a=self.state.get_approval(approval_id)
