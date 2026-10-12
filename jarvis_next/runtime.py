@@ -75,7 +75,15 @@ class JarvisRuntime:
         self.state.update(mid,"completed",plan=plan,result={"next_step":len(plan["steps"]),"context":ctx,"results":results,"attempts":attempts}); return {"mission_id":mid,"status":"completed","results":results,"context":ctx}
 
     async def submit(self,goal,context=None):
-        mid=self.state.create_mission(goal); ctx=dict(context or {}); plan=self.planner.plan(goal,ctx)
+        mid=self.state.create_mission(goal); ctx=dict(context or {})
+        try:
+            plan=self.planner.plan(goal,ctx)
+        except Exception as e:
+            error=str(e) or e.__class__.__name__
+            result={"mission_id":mid,"status":"failed","error":error}
+            self.state.update(mid,"failed",result=result)
+            self.state.event("mission.planning_failed",{"error":error},mid)
+            return result
         self.state.update(mid,"running",plan=plan,result={"next_step":0,"context":ctx,"results":[],"attempts":{}})
         return await self._run(mid,goal,plan,ctx,0)
 
