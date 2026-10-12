@@ -14,10 +14,14 @@ def main():
     planner = MissionPlanner(InvalidModelRouter())
     plan = planner.plan("find revenue opportunities")
 
-    assert plan["source"] == "deterministic"
+    # An invalid model plan must be rejected and replaced by the deterministic
+    # planner. The deterministic planner currently resolves this goal through
+    # the revenue prospecting recipe, which is still deterministic and does not
+    # originate from the model router.
+    assert plan["source"] == "recipe:revenue_prospecting"
     assert plan["steps"][-1] == {
-        "capability": "external_send",
-        "action": "external_send",
+        "capability": "followup_automation",
+        "action": "workflow_trigger",
     }
     assert all(
         not (
