@@ -53,9 +53,9 @@ def main():
             assert primary.calls == 1
             assert backup.calls == 1
             assert result["results"][0]["worker"] == "primary"
-            assert result["results"][0]["ok"] is False
+            assert result["results"][0]["status"] == "failed"
             assert result["results"][-1]["worker"] == "backup"
-            assert result["results"][-1]["ok"] is True
+            assert result["results"][-1]["status"] == "completed"
 
     asyncio.run(run())
     print("JARVIS-NEXT FALLBACK CONTRACT OK")
