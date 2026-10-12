@@ -25,6 +25,12 @@ from typing import Any
 from .adapters import Worker, WorkerResult
 
 
+def _idempotency_key(task: dict[str, Any]) -> str | None:
+    """Return the runtime execution identity supplied to an external worker."""
+    value = task.get("idempotency_key")
+    return str(value) if value is not None else None
+
+
 async def _run_command(command: list[str], *, cwd: str | None = None, timeout: int = 900, env: dict[str, str] | None = None) -> WorkerResult:
     try:
         proc = await asyncio.create_subprocess_exec(
@@ -56,8 +62,12 @@ class RufloAdapter(Worker):
         prompt = str(task.get("goal") or "")
         if task.get("context"):
             prompt += "\n\nJARVIS context:\n" + json.dumps(task["context"], ensure_ascii=False, default=str)
+        key = _idempotency_key(task)
+        if key:
+            prompt += "\n\nJARVIS idempotency key:\n" + key
         command = shlex.split(os.getenv("JARVIS_RUFLO_CMD", "npx -y ruflo@latest run")) + [prompt]
-        return await _run_command(command, cwd=os.getenv("JARVIS_RUFLO_CWD") or None, timeout=int(os.getenv("JARVIS_RUFLO_TIMEOUT", "1800")))
+        env = {"JARVIS_IDEMPOTENCY_KEY": key} if key else None
+        return await _run_command(command, cwd=os.getenv("JARVIS_RUFLO_CWD") or None, timeout=int(os.getenv("JARVIS_RUFLO_TIMEOUT", "1800")), env=env)
     def health(self):
         command = shlex.split(os.getenv("JARVIS_RUFLO_CMD", "npx -y ruflo@latest"))[0]
         return {"ok": bool(shutil.which(command) or command == "npx"), "command": command}
@@ -74,7 +84,11 @@ class PaperclipAdapter(Worker):
         company = os.getenv("JARVIS_PAPERCLIP_COMPANY_ID", "")
         if not (base and token and company):
             return WorkerResult(False, error="Paperclip not configured; set JARVIS_PAPERCLIP_URL/TOKEN/COMPANY_ID")
-        payload = {"title": str(task.get("goal") or "JARVIS delegated task"), "description": json.dumps({"source":"JARVIS","context":task.get("context",{}),"step":task.get("step",{})}, ensure_ascii=False, default=str)}
+        key = _idempotency_key(task)
+        description = {"source":"JARVIS","context":task.get("context",{}),"step":task.get("step",{})}
+        if key:
+            description["idempotency_key"] = key
+        payload = {"title": str(task.get("goal") or "JARVIS delegated task"), "description": json.dumps(description, ensure_ascii=False, default=str)}
         if os.getenv("JARVIS_PAPERCLIP_AGENT_ID"):
             payload["assigneeAgentId"] = os.getenv("JARVIS_PAPERCLIP_AGENT_ID")
         request = urllib.request.Request(f"{base}/api/companies/{company}/issues", data=json.dumps(payload).encode(), headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}, method="POST")
@@ -102,8 +116,10 @@ class AIReceptionistAdapter(Worker):
         raw = os.getenv("JARVIS_RECEPTIONIST_CMD", "")
         if not raw:
             return WorkerResult(False, error="AI receptionist not configured; set JARVIS_RECEPTIONIST_CMD")
-        payload = json.dumps({"goal":str(task.get("goal") or ""),"context":task.get("context",{})}, ensure_ascii=False, default=str)
-        return await _run_command(shlex.split(raw) + [payload], cwd=os.getenv("JARVIS_RECEPTIONIST_CWD") or None, timeout=int(os.getenv("JARVIS_RECEPTIONIST_TIMEOUT", "900")))
+        payload = json.dumps({"goal":str(task.get("goal") or ""),"context":task.get("context",{}),"idempotency_key":_idempotency_key(task)}, ensure_ascii=False, default=str)
+        key = _idempotency_key(task)
+        env = {"JARVIS_IDEMPOTENCY_KEY": key} if key else None
+        return await _run_command(shlex.split(raw) + [payload], cwd=os.getenv("JARVIS_RECEPTIONIST_CWD") or None, timeout=int(os.getenv("JARVIS_RECEPTIONIST_TIMEOUT", "900")), env=env)
     def health(self):
         raw = os.getenv("JARVIS_RECEPTIONIST_CMD", "")
         if not raw: return {"ok":False,"configured":False}
@@ -120,7 +136,7 @@ class N8NAdapter(Worker):
         url = os.getenv("JARVIS_N8N_WEBHOOK_URL", "")
         if not url:
             return WorkerResult(False, error="n8n not configured; set JARVIS_N8N_WEBHOOK_URL")
-        payload = {"source":"JARVIS","mission_id":task.get("mission_id"),"goal":task.get("goal"),"step":task.get("step",{}),"context":task.get("context",{})}
+        payload = {"source":"JARVIS","mission_id":task.get("mission_id"),"goal":task.get("goal"),"step":task.get("step",{}),"context":task.get("context",{}),"idempotency_key":_idempotency_key(task)}
         headers = {"Content-Type":"application/json"}
         token = os.getenv("JARVIS_N8N_WEBHOOK_TOKEN", "")
         if token: headers["Authorization"] = f"Bearer {token}"
@@ -168,6 +184,7 @@ class TwentyAdapter(Worker):
             "goal": task.get("goal"),
             "need": context.get("need") or target.get("need"),
             "score": context.get("selection_score") or target.get("score"),
+            "idempotency_key": _idempotency_key(task),
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         request = urllib.request.Request(
