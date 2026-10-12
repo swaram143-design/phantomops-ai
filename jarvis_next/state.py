@@ -8,6 +8,7 @@ class StateStore:
         os.makedirs(os.path.dirname(self.path) or ".",exist_ok=True)
         self.conn=sqlite3.connect(self.path,check_same_thread=False)
         self.conn.row_factory=sqlite3.Row
+        self.conn.execute("PRAGMA busy_timeout=5000")
         self.conn.executescript("""CREATE TABLE IF NOT EXISTS missions(id TEXT PRIMARY KEY,goal TEXT,status TEXT,plan TEXT,result TEXT,created_at TEXT,updated_at TEXT);
 CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT,mission_id TEXT,kind TEXT,payload TEXT,created_at TEXT);
 CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY,mission_id TEXT,action TEXT,payload TEXT,status TEXT,created_at TEXT,resolved_at TEXT);
