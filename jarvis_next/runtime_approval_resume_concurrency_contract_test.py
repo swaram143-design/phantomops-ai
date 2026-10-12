@@ -3,7 +3,6 @@ import tempfile
 import threading
 
 from .adapters import Worker, WorkerRegistry, WorkerResult
-from .permissions import PermissionEngine
 from .runtime import JarvisRuntime
 from .state import StateStore
 
@@ -38,11 +37,7 @@ def main():
         state = StateStore(db)
         workers = WorkerRegistry()
         workers.register(worker)
-        runtime = JarvisRuntime(
-            state=state,
-            workers=workers,
-            permissions=PermissionEngine("allow")
-        )
+        runtime = JarvisRuntime(state=state, workers=workers)
         runtime.planner = FixedPlanner()
         pending = await runtime.submit("send prepared message")
         assert pending["status"] == "awaiting_approval"
@@ -60,11 +55,7 @@ def main():
                 state = StateStore(db.name)
                 workers = WorkerRegistry()
                 workers.register(worker)
-                runtime = JarvisRuntime(
-                    state=state,
-                    workers=workers,
-                    permissions=PermissionEngine("allow")
-                )
+                runtime = JarvisRuntime(state=state, workers=workers)
                 runtime.planner = FixedPlanner()
                 barrier.wait()
                 results.append(asyncio.run(runtime.resume(approval_id, approved=True)))
