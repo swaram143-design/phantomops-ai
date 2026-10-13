@@ -1,22 +1,17 @@
 name: JARVIS-NEXT Smoke Test
 
-# Smoke workflow for the jarvis-next runtime contract suite.
-# Includes the real local PhantomOps revenue execution path.
 on:
   workflow_dispatch:
   push:
     branches: [jarvis-next]
     paths:
-      - "jarvis_next/**"
-      - ".github/workflows/jarvis-next-smoke.yml"
+      - 'jarvis_next/**'
+      - '.github/workflows/jarvis-next-smoke.yml'
   pull_request:
     branches: [jarvis-next]
     paths:
-      - "jarvis_next/**"
-      - ".github/workflows/jarvis-next-smoke.yml"
-
-permissions:
-  contents: read
+      - 'jarvis_next/**'
+      - '.github/workflows/jarvis-next-smoke.yml'
 
 jobs:
   smoke:
@@ -25,11 +20,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
       - name: Verify Python and package import
-        run: |
-          python --version
-          python -c "import jarvis_next; print('jarvis_next', jarvis_next.__version__)"
+        run: python --version && python -c "import jarvis_next; print('jarvis_next import ok')"
       - name: Install runtime dependencies
         run: python -m pip install -r requirements.txt
       - name: Run JARVIS-NEXT smoke test
@@ -95,22 +88,24 @@ jobs:
       - name: Run durable restart resume contract test
         run: python -m jarvis_next.runtime_restart_resume_contract_test
       - name: Run partial mission resume idempotency contract test
-        run: python -m jarvis_next.runtime_partial_resume_contract_test
+        run: python -m jarvis_next.runtime_partial_resume_idempotency_contract_test
       - name: Run retry exhaustion contract test
         run: python -m jarvis_next.runtime_retry_exhaustion_contract_test
       - name: Run terminal mission resume idempotency contract test
-        run: python -m jarvis_next.runtime_terminal_resume_contract_test
+        run: python -m jarvis_next.runtime_terminal_resume_idempotency_contract_test
       - name: Run blocked mission resume contract test
         run: python -m jarvis_next.runtime_blocked_resume_contract_test
       - name: Run mission recipe contract test
-        run: python -m jarvis_next.mission_recipes_test
+        run: python -m jarvis_next.mission_recipe_contract_test
       - name: Run durable revenue approval resume test
-        run: python -m jarvis_next.revenue_runtime_test
+        run: python -m jarvis_next.revenue_approval_resume_contract_test
       - name: Run real adapter integration test
         run: python -m jarvis_next.real_adapter_integration_test
       - name: Run HTTP adapter error contract test
         run: python -m jarvis_next.http_adapter_error_contract_test
       - name: Run HTTP adapter timeout contract test
         run: python -m jarvis_next.http_adapter_timeout_contract_test
+      - name: Run command adapter contract test
+        run: python -m jarvis_next.command_adapter_contract_test
       - name: Run integration readiness contract test
-        run: python -m jarvis_next.integration_readiness_test
+        run: python -m jarvis_next.integration_readiness_contract_test
