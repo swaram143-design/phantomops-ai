@@ -1,5 +1,6 @@
 name: JARVIS-NEXT Smoke Test
 
+# Keep canonical jarvis-next validation runnable on direct branch pushes and manual dispatch.
 on:
   workflow_dispatch:
   push:
