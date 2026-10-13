@@ -1,6 +1,7 @@
 name: JARVIS-NEXT Smoke Test
 
 # Smoke workflow for the jarvis-next runtime contract suite.
+# Includes the real local PhantomOps revenue execution path.
 on:
   workflow_dispatch:
   push:
