@@ -36,6 +36,15 @@ class FixedPlanner:
         return {"goal": goal, "steps": [{"capability": "research", "action": "research"}]}
 
 
+def concurrent_unknown(db_path, mission_id):
+    state = StateStore(db_path)
+    runtime = type("Runtime", (), {"state": state})()
+    try:
+        return asyncio.run(reconcile_uncertain(runtime, mission_id, "unknown"))
+    finally:
+        state.conn.close()
+
+
 async def run():
     with tempfile.NamedTemporaryFile(suffix=".db") as db:
         state = StateStore(db.name)
@@ -76,6 +85,7 @@ async def run():
         assert applied_final["next_step"] == 1
         assert applied_final["reconciliation"]["resolution"] == "confirmed_applied"
         assert "side_effect_uncertain" not in applied_final
+        applied_state.conn.close()
 
         second_state = StateStore(db.name + ".second")
         second_workers = WorkerRegistry()
@@ -95,10 +105,8 @@ async def run():
         ).fetchone()[0]
         assert event_count == 1
 
-        async def call_unknown():
-            return await reconcile_uncertain(second_runtime, second["mission_id"], "unknown")
-
-        results = await asyncio.gather(call_unknown(), call_unknown(), call_unknown())
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            results = list(pool.map(lambda _: concurrent_unknown(db.name + ".second", second["mission_id"]), range(3)))
         assert all(item["status"] == "failed" for item in results)
         assert all(item["reconciliation"] == "unknown" for item in results)
         event_count = second_state.conn.execute(
@@ -106,6 +114,7 @@ async def run():
             (second["mission_id"],),
         ).fetchone()[0]
         assert event_count == 1
+        second_state.conn.close()
 
 
 asyncio.run(run())
