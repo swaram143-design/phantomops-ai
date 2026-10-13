@@ -43,10 +43,23 @@ def _ambiguous_timeout(exc: BaseException, adapter: str) -> WorkerResult:
 
 
 def _is_timeout_error(exc: BaseException) -> bool:
-    """Recognize direct and urllib-wrapped socket timeouts."""
-    if isinstance(exc, TimeoutError):
-        return True
-    return isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, TimeoutError)
+    """Recognize direct, wrapped, and platform-specific socket timeout failures."""
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, TimeoutError):
+            return True
+        if isinstance(current, urllib.error.URLError) and isinstance(current.reason, TimeoutError):
+            return True
+        text = str(current).lower()
+        if "timed out" in text or "timeout" in text:
+            return True
+        reason = getattr(current, "reason", None)
+        cause = getattr(current, "__cause__", None)
+        context = getattr(current, "__context__", None)
+        current = reason if isinstance(reason, BaseException) else cause if isinstance(cause, BaseException) else context if isinstance(context, BaseException) else None
+    return False
 
 
 async def _run_command(command: list[str], *, cwd: str | None = None, timeout: int = 900, env: dict[str, str] | None = None) -> WorkerResult:
