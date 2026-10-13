@@ -76,6 +76,21 @@ async def main():
         assert direct_crm.data["crm_synced"] is True, direct_crm
         assert direct_crm.data["crm_id"].startswith("local-crm:"), direct_crm
 
+        calls = []
+        original_run = adapter.run
+
+        async def traced_run(task):
+            result = await original_run(task)
+            calls.append({
+                "capability": task["step"]["capability"],
+                "step": task["step"],
+                "result_ok": result.ok,
+                "result_data": result.data,
+            })
+            return result
+
+        adapter.run = traced_run
+
         first = await runtime.submit("execute revenue workflow", context)
         assert first["status"] == "awaiting_approval", first
         assert first["step_index"] == 2, first
@@ -87,6 +102,7 @@ async def main():
         assert crm["context"].get("crm_synced") is True, {
             "resume_result": crm,
             "mission_state": runtime.state.get_mission(first["mission_id"]),
+            "adapter_calls": calls,
         }
         assert crm["context"]["crm_id"].startswith("local-crm:"), crm
 
