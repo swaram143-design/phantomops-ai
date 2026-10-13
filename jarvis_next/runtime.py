@@ -44,6 +44,8 @@ class JarvisRuntime:
     async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None,results=None,attempts=None,lease_owner=None):
         results=list(results or []); attempts=dict(attempts or {}); ctx=self._durable(ctx); ctx.setdefault("step_outputs",{})
         for i in range(start_index,len(plan["steps"])):
+            if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
+                return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
             step=plan["steps"][i]; decision=self.permissions.check(step["action"])
             if decision.requires_approval and i != approved_step:
                 aid=self.state.approval(mid,step["action"],{"step_index":i,"step":step,"context":ctx,"results":results,"attempts":attempts})
@@ -62,8 +64,12 @@ class JarvisRuntime:
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
             step_done=False
             for worker in workers:
+                if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
+                    return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
                 key=f"{i}:{worker.name}"; attempt=attempts.get(key,0); execution_key=f"{mid}:{i}:{worker.name}"
                 while attempt < self.max_retries+1:
+                    if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
+                        return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
                     attempt+=1; attempts[key]=attempt
                     try: result=await worker.run({**task,"attempt":attempt,"idempotency_key":execution_key})
                     except Exception as e: result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
@@ -80,6 +86,8 @@ class JarvisRuntime:
                         await asyncio.sleep(self.retry_delay*attempt); continue
                     results.append(item); self.state.event("worker.failed",{"step_index":i,"worker":worker.name,"error":error,"fallback_available":len(workers)>1},mid); break
                 if step_done: break
+                if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
+                    return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
                 self.state.event("worker.fallback",{"step_index":i,"failed_worker":worker.name},mid)
             if not step_done:
                 self._update(mid,lease_owner,status="failed",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts}); return {"mission_id":mid,"status":"failed","results":results,"context":ctx}
