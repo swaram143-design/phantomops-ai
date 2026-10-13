@@ -32,6 +32,7 @@ async def scenario():
         "JARVIS_TWENTY_URL", "JARVIS_TWENTY_API_KEY", "JARVIS_TWENTY_TIMEOUT",
     )}
     try:
+        SlowAcceptedHandler.calls = 0
         url = f"http://127.0.0.1:{server.server_port}"
         os.environ["JARVIS_N8N_WEBHOOK_URL"] = url
         os.environ["JARVIS_N8N_TIMEOUT"] = "0.02"
