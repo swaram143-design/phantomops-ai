@@ -30,7 +30,7 @@ class JarvisRuntime:
     def _record_output(ctx,index,data):
         ctx.setdefault("step_outputs",{})[str(index)]=data
         if not isinstance(data,dict): return
-        protected={"company","recipient","selected_target","selection_score"}
+        protected={"goal","step","step_index","context","mission_id","attempt","idempotency_key","company","recipient","selected_target","selection_score"}
         for key,value in data.items():
             if key not in protected or key not in ctx: ctx[key]=value
     def _update(self,mid,owner,**kwargs): self.state.update(mid,lease_owner=owner,**kwargs)
@@ -53,7 +53,8 @@ class JarvisRuntime:
                 item={"status":"blocked","reason":decision.reason,"step":step,"step_index":i}; results.append(item)
                 self._update(mid,lease_owner,status="blocked",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
-            task={"goal":goal,"step":step,"step_index":i,"context":ctx,"mission_id":mid}; task.update(ctx); task["context"]=ctx
+            task=dict(ctx)
+            task.update({"goal":goal,"step":step,"step_index":i,"context":ctx,"mission_id":mid})
             workers=self.workers.ranked(step["capability"],task) if self.workers else []
             if not workers:
                 item={"status":"blocked","reason":"no worker","step":step,"step_index":i}; results.append(item)
