@@ -90,7 +90,7 @@ class JarvisRuntime:
         mid=self.state.create_mission(goal); ctx=dict(context or {})
         try: plan=self.planner.plan(goal,ctx)
         except Exception as e:
-            error=str(e) or e.__class__.__name__; result={"mission_id":mid,"status":"failed","error":error}; self.state.update(mid,"failed",result=result); self.state.event("mission.planning_failed",{"error":error},mid); return result
+            error=str(e) or e.__class__.__name__; result={"mission_id":mid,"status":"failed","error":error}; self.state.update_with_event(mid,status="failed",result=result,event_kind="mission.planning_failed",event_payload={"error":error}); return result
         self.state.update(mid,"running",plan=plan,result={"next_step":0,"context":ctx,"results":[],"attempts":{}})
         owner=str(uuid.uuid4())
         if not self.state.claim_mission(mid,owner,statuses=("running",)): raise RuntimeError("failed to claim newly created mission")
