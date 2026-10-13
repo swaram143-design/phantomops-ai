@@ -42,6 +42,13 @@ def _ambiguous_timeout(exc: BaseException, adapter: str) -> WorkerResult:
     return WorkerResult(False, error=f"{adapter} request outcome unknown after timeout: {exc}", retryable=False)
 
 
+def _is_timeout_error(exc: BaseException) -> bool:
+    """Recognize direct and urllib-wrapped socket timeouts."""
+    if isinstance(exc, TimeoutError):
+        return True
+    return isinstance(exc, urllib.error.URLError) and isinstance(exc.reason, TimeoutError)
+
+
 async def _run_command(command: list[str], *, cwd: str | None = None, timeout: int = 900, env: dict[str, str] | None = None) -> WorkerResult:
     try:
         proc = await asyncio.create_subprocess_exec(*command, cwd=cwd, env={**os.environ, **(env or {})}, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
@@ -101,9 +108,9 @@ class PaperclipAdapter(Worker):
             return WorkerResult(True, parsed)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace"); return WorkerResult(False, error=f"Paperclip HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
-        except TimeoutError as exc:
-            return _ambiguous_timeout(exc, "Paperclip")
-        except Exception as exc: return WorkerResult(False, error=str(exc), retryable=True)
+        except Exception as exc:
+            if _is_timeout_error(exc): return _ambiguous_timeout(exc, "Paperclip")
+            return WorkerResult(False, error=str(exc), retryable=True)
     def health(self): return {"ok": bool(os.getenv("JARVIS_PAPERCLIP_URL") and os.getenv("JARVIS_PAPERCLIP_TOKEN") and os.getenv("JARVIS_PAPERCLIP_COMPANY_ID"))}
 
 
@@ -135,15 +142,15 @@ class N8NAdapter(Worker):
         if token: headers["Authorization"] = f"Bearer {token}"
         request = urllib.request.Request(url, data=json.dumps(payload, ensure_ascii=False, default=str).encode(), headers=headers, method="POST")
         try:
-            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(os.getenv("JARVIS_N8N_TIMEOUT", "60"))); body = response.read().decode("utf-8", errors="replace")
+            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(float(os.getenv("JARVIS_N8N_TIMEOUT", "60")))); body = response.read().decode("utf-8", errors="replace")
             try: parsed: Any = json.loads(body)
             except json.JSONDecodeError: parsed = {"raw": body}
             return WorkerResult(True, parsed)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace"); return WorkerResult(False, error=f"n8n HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
-        except TimeoutError as exc:
-            return _ambiguous_timeout(exc, "n8n")
-        except Exception as exc: return WorkerResult(False, error=str(exc), retryable=True)
+        except Exception as exc:
+            if _is_timeout_error(exc): return _ambiguous_timeout(exc, "n8n")
+            return WorkerResult(False, error=str(exc), retryable=True)
     def health(self): return {"ok": bool(os.getenv("JARVIS_N8N_WEBHOOK_URL")), "configured": bool(os.getenv("JARVIS_N8N_WEBHOOK_URL"))}
 
 
@@ -160,14 +167,14 @@ class TwentyAdapter(Worker):
         payload = {k: v for k, v in payload.items() if v is not None}
         request = urllib.request.Request(f"{base}{path}", data=json.dumps(payload, ensure_ascii=False, default=str).encode(), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json", **_idempotency_headers(task)}, method=os.getenv("JARVIS_TWENTY_METHOD", "POST").upper())
         try:
-            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(os.getenv("JARVIS_TWENTY_TIMEOUT", "30"))); body = response.read().decode("utf-8", errors="replace")
+            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(float(os.getenv("JARVIS_TWENTY_TIMEOUT", "30")))); body = response.read().decode("utf-8", errors="replace")
             try: parsed: Any = json.loads(body)
             except json.JSONDecodeError: parsed = {"raw": body}
             return WorkerResult(True, parsed)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace"); return WorkerResult(False, error=f"Twenty HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
-        except TimeoutError as exc:
-            return _ambiguous_timeout(exc, "Twenty")
-        except Exception as exc: return WorkerResult(False, error=str(exc), retryable=True)
+        except Exception as exc:
+            if _is_timeout_error(exc): return _ambiguous_timeout(exc, "Twenty")
+            return WorkerResult(False, error=str(exc), retryable=True)
     def health(self):
         configured = bool(os.getenv("JARVIS_TWENTY_URL") and os.getenv("JARVIS_TWENTY_API_KEY")); return {"ok": configured, "configured": configured, "base_url": bool(os.getenv("JARVIS_TWENTY_URL")), "api_key": bool(os.getenv("JARVIS_TWENTY_API_KEY"))}
