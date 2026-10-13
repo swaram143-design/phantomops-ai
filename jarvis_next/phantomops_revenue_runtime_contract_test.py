@@ -69,7 +69,10 @@ async def main():
 
         crm = await runtime.resume(first["approval_id"], approved=True)
         assert crm["status"] == "awaiting_approval", crm
-        assert crm["context"]["crm_synced"] is True, crm
+        assert crm["context"].get("crm_synced") is True, {
+            "resume_result": crm,
+            "mission_state": runtime.state.get_mission(first["mission_id"]),
+        }
         assert crm["context"]["crm_id"].startswith("local-crm:"), crm
 
         sent = await runtime.resume(crm["approval_id"], approved=True)
