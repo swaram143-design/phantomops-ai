@@ -25,14 +25,24 @@ async def run():
             return original_insert_event(kind, payload, mid)
 
         state._insert_event = fail_planning_event
-        result = await runtime.submit("find revenue opportunities")
-        mission = state.get_mission(result["mission_id"])
+        try:
+            await runtime.submit("find revenue opportunities")
+            raise AssertionError("expected planning event write failure")
+        except RuntimeError as exc:
+            assert str(exc) == "planning event write failed"
+
+        missions = state.conn.execute(
+            "SELECT id FROM missions ORDER BY created_at DESC LIMIT 1"
+        ).fetchone()
+        assert missions is not None
+        mission_id = missions["id"]
+        mission = state.get_mission(mission_id)
         assert mission["status"] == "queued"
         assert mission["plan"] is None
         assert mission["result"] is None
         assert state.conn.execute(
             "SELECT COUNT(*) FROM events WHERE mission_id=? AND kind='mission.planning_failed'",
-            (result["mission_id"],),
+            (mission_id,),
         ).fetchone()[0] == 0
 
         state._insert_event = original_insert_event
