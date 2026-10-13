@@ -115,7 +115,7 @@ class PaperclipAdapter(Worker):
         headers = {"Authorization":f"Bearer {token}","Content-Type":"application/json",**_idempotency_headers(task)}
         request = urllib.request.Request(f"{base}/api/companies/{company}/issues", data=json.dumps(payload).encode(), headers=headers, method="POST")
         try:
-            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(os.getenv("JARVIS_PAPERCLIP_TIMEOUT", "30"))); body = response.read().decode("utf-8", errors="replace")
+            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=float(os.getenv("JARVIS_PAPERCLIP_TIMEOUT", "30"))); body = response.read().decode("utf-8", errors="replace")
             try: parsed: Any = json.loads(body)
             except json.JSONDecodeError: parsed = {"raw": body}
             return WorkerResult(True, parsed)
@@ -155,7 +155,7 @@ class N8NAdapter(Worker):
         if token: headers["Authorization"] = f"Bearer {token}"
         request = urllib.request.Request(url, data=json.dumps(payload, ensure_ascii=False, default=str).encode(), headers=headers, method="POST")
         try:
-            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(float(os.getenv("JARVIS_N8N_TIMEOUT", "60")))); body = response.read().decode("utf-8", errors="replace")
+            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=float(os.getenv("JARVIS_N8N_TIMEOUT", "60"))); body = response.read().decode("utf-8", errors="replace")
             try: parsed: Any = json.loads(body)
             except json.JSONDecodeError: parsed = {"raw": body}
             return WorkerResult(True, parsed)
@@ -180,7 +180,7 @@ class TwentyAdapter(Worker):
         payload = {k: v for k, v in payload.items() if v is not None}
         request = urllib.request.Request(f"{base}{path}", data=json.dumps(payload, ensure_ascii=False, default=str).encode(), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json", **_idempotency_headers(task)}, method=os.getenv("JARVIS_TWENTY_METHOD", "POST").upper())
         try:
-            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=int(float(os.getenv("JARVIS_TWENTY_TIMEOUT", "30")))); body = response.read().decode("utf-8", errors="replace")
+            response = await asyncio.to_thread(urllib.request.urlopen, request, timeout=float(os.getenv("JARVIS_TWENTY_TIMEOUT", "30"))); body = response.read().decode("utf-8", errors="replace")
             try: parsed: Any = json.loads(body)
             except json.JSONDecodeError: parsed = {"raw": body}
             return WorkerResult(True, parsed)
