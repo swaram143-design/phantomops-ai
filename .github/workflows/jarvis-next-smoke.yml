@@ -110,5 +110,7 @@ jobs:
         run: python -m jarvis_next.real_adapter_integration_test
       - name: Run HTTP adapter error contract test
         run: python -m jarvis_next.http_adapter_error_contract_test
+      - name: Run HTTP adapter timeout contract test
+        run: python -m jarvis_next.http_adapter_timeout_contract_test
       - name: Run integration readiness contract test
         run: python -m jarvis_next.integration_readiness_test
