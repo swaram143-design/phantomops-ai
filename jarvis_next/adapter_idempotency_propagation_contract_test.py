@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 
@@ -10,11 +9,13 @@ from .ecosystem_adapters import N8NAdapter, TwentyAdapter
 
 class Handler(BaseHTTPRequestHandler):
     payloads = []
+    headers_seen = []
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
         body = self.rfile.read(length)
         self.__class__.payloads.append(json.loads(body.decode("utf-8")))
+        self.__class__.headers_seen.append(dict(self.headers))
         response = json.dumps({"ok": True}).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -28,11 +29,13 @@ class Handler(BaseHTTPRequestHandler):
 
 async def scenario():
     Handler.payloads = []
+    Handler.headers_seen = []
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
-    old = {k: os.environ.get(k) for k in ("JARVIS_N8N_WEBHOOK_URL", "JARVIS_N8N_WEBHOOK_TOKEN", "JARVIS_TWENTY_URL", "JARVIS_TWENTY_API_KEY", "JARVIS_TWENTY_CRM_PATH")}
+    names = ("JARVIS_N8N_WEBHOOK_URL", "JARVIS_N8N_WEBHOOK_TOKEN", "JARVIS_TWENTY_URL", "JARVIS_TWENTY_API_KEY", "JARVIS_TWENTY_CRM_PATH")
+    old = {k: os.environ.get(k) for k in names}
     os.environ["JARVIS_N8N_WEBHOOK_URL"] = base + "/n8n"
     os.environ["JARVIS_N8N_WEBHOOK_TOKEN"] = "test-token"
     os.environ["JARVIS_TWENTY_URL"] = base
@@ -42,26 +45,24 @@ async def scenario():
     try:
         twenty = TwentyAdapter()
         result = await twenty.run({
-            "mission_id": "mission-123",
-            "idempotency_key": key,
-            "goal": "sync Acme Clinic",
+            "mission_id": "mission-123", "idempotency_key": key, "goal": "sync Acme Clinic",
             "step": {"capability": "crm_sync", "action": "workflow_trigger"},
             "context": {"company": "Acme Clinic", "recipient": "owner@acme.example"},
         })
         assert result.ok
         assert Handler.payloads[-1]["idempotency_key"] == key
+        assert Handler.headers_seen[-1]["Idempotency-Key"] == key
 
         n8n = N8NAdapter()
         n8n_key = "mission-123:1:n8n"
         result = await n8n.run({
-            "mission_id": "mission-123",
-            "idempotency_key": n8n_key,
-            "goal": "schedule follow-up",
+            "mission_id": "mission-123", "idempotency_key": n8n_key, "goal": "schedule follow-up",
             "step": {"capability": "followup_automation", "action": "workflow_trigger"},
             "context": {"company": "Acme Clinic"},
         })
         assert result.ok
         assert Handler.payloads[-1]["idempotency_key"] == n8n_key
+        assert Handler.headers_seen[-1]["Idempotency-Key"] == n8n_key
     finally:
         for key_name, value in old.items():
             if value is None:
