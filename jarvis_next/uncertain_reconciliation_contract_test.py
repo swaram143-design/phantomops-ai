@@ -59,6 +59,23 @@ async def run():
         assert final["reconciliation"]["resolution"] == "confirmed_not_applied"
         assert "side_effect_uncertain" not in final
 
+        applied_state = StateStore(db.name + ".applied")
+        applied_workers = WorkerRegistry()
+        applied_worker = UncertainThenSuccess()
+        applied_workers.register(applied_worker)
+        applied_runtime = JarvisRuntime(state=applied_state, workers=applied_workers, max_retries=2, retry_delay=0)
+        applied_runtime.planner = FixedPlanner()
+        applied = await applied_runtime.submit("confirmed external outcome")
+        assert applied["status"] == "failed"
+        assert applied_worker.calls == 1
+        applied_result = await reconcile_uncertain(applied_runtime, applied["mission_id"], "confirmed_applied")
+        assert applied_result["status"] == "completed"
+        assert applied_worker.calls == 1
+        applied_final = json.loads(applied_state.get_mission(applied["mission_id"])["result"])
+        assert applied_final["next_step"] == 1
+        assert applied_final["reconciliation"]["resolution"] == "confirmed_applied"
+        assert "side_effect_uncertain" not in applied_final
+
         second_state = StateStore(db.name + ".second")
         second_workers = WorkerRegistry()
         second_workers.register(AlwaysUncertain())
