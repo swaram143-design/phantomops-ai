@@ -79,7 +79,7 @@ class JarvisRuntime:
                         item={"status":"completed","worker":worker.name,"attempt":attempt,"data":result.data,"error":None,"step":step,"step_index":i}; results.append(item); self._record_output(ctx,i,result.data)
                         self.state.update_with_event(mid,lease_owner=lease_owner,status="running",plan=plan,result={"next_step":i+1,"context":ctx,"results":results,"attempts":attempts},event_kind="step.completed",event_payload={"step_index":i,"capability":step["capability"],"worker":worker.name,"attempt":attempt,"verified":True})
                         step_done=True; break
-                    error=result.error or verification_error; retryable=result.retryable or self._retryable(error)
+                    error=result.error or verification_error; retryable=result.retryable if result.error is not None else self._retryable(error)
                     item={"status":"retrying" if retryable and attempt<=self.max_retries else "failed","worker":worker.name,"attempt":attempt,"data":result.data,"error":error,"step":step,"step_index":i}
                     if retryable and attempt<=self.max_retries:
                         self.state.update_with_event(mid,lease_owner=lease_owner,status="retrying",plan=plan,result={"next_step":i,"context":ctx,"results":results+[item],"attempts":attempts},event_kind="step.retry",event_payload={"step_index":i,"worker":worker.name,"attempt":attempt,"error":error})
