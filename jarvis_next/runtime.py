@@ -62,7 +62,7 @@ class JarvisRuntime:
                 item={"status":"blocked","reason":"no worker","step":step,"step_index":i}; results.append(item)
                 self._update(mid,lease_owner,status="blocked",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
-            step_done=False
+            step_done=False; uncertain_outcome=False
             for worker in workers:
                 if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
                     return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
@@ -73,7 +73,7 @@ class JarvisRuntime:
                     attempt+=1; attempts[key]=attempt
                     try: result=await worker.run({**task,"attempt":attempt,"idempotency_key":execution_key})
                     except Exception as e: result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
-                    if result.ok: result=WorkerResult(True,data=self._durable(result.data),error=result.error,retryable=result.retryable)
+                    if result.ok: result=WorkerResult(True,data=self._durable(result.data),error=result.error,retryable=result.retryable,side_effect_uncertain=result.side_effect_uncertain)
                     verified,verification_error=self._verify(step,result)
                     if verified:
                         item={"status":"completed","worker":worker.name,"attempt":attempt,"data":result.data,"error":None,"step":step,"step_index":i}; results.append(item); self._record_output(ctx,i,result.data)
@@ -81,16 +81,24 @@ class JarvisRuntime:
                         step_done=True; break
                     error=result.error or verification_error; retryable=result.retryable if result.error is not None else self._retryable(error)
                     item={"status":"retrying" if retryable and attempt<=self.max_retries else "failed","worker":worker.name,"attempt":attempt,"data":result.data,"error":error,"step":step,"step_index":i}
+                    if result.side_effect_uncertain:
+                        item["side_effect_uncertain"]=True
+                        results.append(item)
+                        self.state.event("worker.uncertain",{"step_index":i,"worker":worker.name,"attempt":attempt,"error":error,"fallback_blocked":True},mid)
+                        uncertain_outcome=True
+                        break
                     if retryable and attempt<=self.max_retries:
                         self.state.update_with_event(mid,lease_owner=lease_owner,status="retrying",plan=plan,result={"next_step":i,"context":ctx,"results":results+[item],"attempts":attempts},event_kind="step.retry",event_payload={"step_index":i,"worker":worker.name,"attempt":attempt,"error":error})
                         await asyncio.sleep(self.retry_delay*attempt); continue
                     results.append(item); self.state.event("worker.failed",{"step_index":i,"worker":worker.name,"error":error,"fallback_available":len(workers)>1},mid); break
-                if step_done: break
+                if step_done or uncertain_outcome: break
                 if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
                     return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
                 self.state.event("worker.fallback",{"step_index":i,"failed_worker":worker.name},mid)
             if not step_done:
-                self._update(mid,lease_owner,status="failed",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts}); return {"mission_id":mid,"status":"failed","results":results,"context":ctx}
+                result_payload={"next_step":i,"context":ctx,"results":results,"attempts":attempts}
+                if uncertain_outcome: result_payload["side_effect_uncertain"]=True
+                self._update(mid,lease_owner,status="failed",plan=plan,result=result_payload); return {"mission_id":mid,"status":"failed","results":results,"context":ctx,"side_effect_uncertain":uncertain_outcome}
         self._update(mid,lease_owner,status="completed",plan=plan,result={"next_step":len(plan["steps"]),"context":ctx,"results":results,"attempts":attempts}); return {"mission_id":mid,"status":"completed","results":results,"context":ctx}
     async def _run_owned(self,mid,goal,plan,ctx,owner,**kwargs):
         stop=asyncio.Event(); heartbeat=asyncio.create_task(self._lease_heartbeat(mid,owner,stop))
