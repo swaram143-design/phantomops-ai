@@ -107,6 +107,8 @@ jobs:
         run: python -m jarvis_next.http_adapter_timeout_contract_test
       - name: Run ambiguous HTTP timeout contract test
         run: python -m jarvis_next.http_adapter_ambiguous_timeout_contract_test
+      - name: Run explicit nonretryable runtime contract test
+        run: python -m jarvis_next.runtime_explicit_nonretryable_contract_test
       - name: Run command adapter contract test
         run: python -m jarvis_next.command_adapter_contract_test
       - name: Run integration readiness contract test
