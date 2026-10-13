@@ -16,44 +16,15 @@ async def main():
     except FileNotFoundError:
         pass
 
-    # Keep the test deterministic while exercising the real PhantomOps adapter.
-    from agents.lead_scraper_agent import LeadScraperAgent
-    from agents.opportunity_agent import OpportunityAgent
     from agents.proposal_delivery_agent import ProposalDeliveryAgent
 
-    original_research = LeadScraperAgent.execute
-    original_opportunity = OpportunityAgent.execute
     original_send = ProposalDeliveryAgent.execute
-
-    async def research(self, task):
-        return {
-            "success": True,
-            "leads": [{
-                "company": "JARVIS Test Clinic",
-                "email": "owner@jarvis-test.example",
-                "need": "patient follow-up automation",
-                "score": 9,
-            }],
-        }
-
-    async def opportunity(self, task):
-        return {
-            "success": True,
-            "opportunities": [{
-                "company": "JARVIS Test Clinic",
-                "email": "owner@jarvis-test.example",
-                "need": "patient follow-up automation",
-                "score": 9,
-            }],
-        }
 
     async def send(self, task):
         assert task["recipient"] == "owner@jarvis-test.example"
         assert task["proposal"]
         return {"success": True, "sent": True, "transport": "contract-test"}
 
-    LeadScraperAgent.execute = research
-    OpportunityAgent.execute = opportunity
     ProposalDeliveryAgent.execute = send
 
     try:
@@ -67,9 +38,32 @@ async def main():
             retry_delay=0,
         )
 
-        first = await runtime.submit("find revenue opportunities")
+        # Exercise the real PhantomOps worker and runtime approval flow while
+        # keeping network-dependent lead discovery outside this deterministic test.
+        runtime.planner.plan = lambda goal, context: {
+            "goal": goal,
+            "steps": [
+                {"capability": "select_target", "action": "analyze"},
+                {"capability": "proposal", "action": "draft"},
+                {"capability": "crm_sync", "action": "workflow_trigger"},
+                {"capability": "external_send", "action": "external_send"},
+                {"capability": "followup_automation", "action": "workflow_trigger"},
+            ],
+            "source": "contract:phantomops_revenue",
+        }
+
+        context = {
+            "leads": [{
+                "company": "JARVIS Test Clinic",
+                "email": "owner@jarvis-test.example",
+                "need": "patient follow-up automation",
+                "score": 9,
+            }]
+        }
+
+        first = await runtime.submit("execute revenue workflow", context)
         assert first["status"] == "awaiting_approval", first
-        assert first["step_index"] == 4, first
+        assert first["step_index"] == 2, first
         assert first["context"]["company"] == "JARVIS Test Clinic", first
         assert first["context"]["pdf"].endswith("_proposal.pdf"), first
 
@@ -95,8 +89,6 @@ async def main():
 
         print("JARVIS-NEXT REAL PHANTOMOPS REVENUE RUNTIME OK")
     finally:
-        LeadScraperAgent.execute = original_research
-        OpportunityAgent.execute = original_opportunity
         ProposalDeliveryAgent.execute = original_send
 
 
