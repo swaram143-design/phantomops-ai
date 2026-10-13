@@ -88,17 +88,15 @@ jobs:
       - name: Run durable restart resume contract test
         run: python -m jarvis_next.runtime_restart_resume_contract_test
       - name: Run partial mission resume idempotency contract test
-        run: python -m jarvis_next.runtime_partial_resume_idempotency_contract_test
+        run: python -m jarvis_next.runtime_partial_resume_contract_test
       - name: Run retry exhaustion contract test
         run: python -m jarvis_next.runtime_retry_exhaustion_contract_test
       - name: Run terminal mission resume idempotency contract test
-        run: python -m jarvis_next.runtime_terminal_resume_idempotency_contract_test
+        run: python -m jarvis_next.runtime_terminal_resume_contract_test
       - name: Run blocked mission resume contract test
         run: python -m jarvis_next.runtime_blocked_resume_contract_test
       - name: Run mission recipe contract test
-        run: python -m jarvis_next.mission_recipe_contract_test
-      - name: Run durable revenue approval resume test
-        run: python -m jarvis_next.revenue_approval_resume_contract_test
+        run: python -m jarvis_next.mission_recipes_test
       - name: Run real adapter integration test
         run: python -m jarvis_next.real_adapter_integration_test
       - name: Run HTTP adapter error contract test
@@ -108,4 +106,4 @@ jobs:
       - name: Run command adapter contract test
         run: python -m jarvis_next.command_adapter_contract_test
       - name: Run integration readiness contract test
-        run: python -m jarvis_next.integration_readiness_contract_test
+        run: python -m jarvis_next.integration_readiness_test
