@@ -22,6 +22,14 @@ class UncertainThenSuccess(Worker):
         return WorkerResult(True, {"ok": True})
 
 
+class AlwaysUncertain(Worker):
+    name = "always_uncertain"
+    capabilities = {"research"}
+
+    async def run(self, task):
+        return WorkerResult(False, error="external outcome unknown", retryable=False, side_effect_uncertain=True)
+
+
 class FixedPlanner:
     def plan(self, goal, context=None):
         return {"goal": goal, "steps": [{"capability": "research", "action": "research"}]}
@@ -51,8 +59,13 @@ async def run():
         assert final["reconciliation"]["resolution"] == "confirmed_not_applied"
         assert "side_effect_uncertain" not in final
 
-        second = await runtime.submit("unknown outcome remains unresolved")
-        unresolved = await reconcile_uncertain(runtime, second["mission_id"], "unknown")
+        second_state = StateStore(db.name + ".second")
+        second_workers = WorkerRegistry()
+        second_workers.register(AlwaysUncertain())
+        second_runtime = JarvisRuntime(state=second_state, workers=second_workers, max_retries=2, retry_delay=0)
+        second_runtime.planner = FixedPlanner()
+        second = await second_runtime.submit("unknown outcome remains unresolved")
+        unresolved = await reconcile_uncertain(second_runtime, second["mission_id"], "unknown")
         assert unresolved["status"] == "failed"
         assert unresolved["reconciliation"] == "unknown"
 
