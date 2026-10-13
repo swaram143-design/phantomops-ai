@@ -115,6 +115,8 @@ jobs:
         run: python -m jarvis_next.uncertain_reconciliation_contract_test
       - name: Run restart-safe uncertain reconciliation contract test
         run: python -m jarvis_next.uncertain_reconciliation_restart_contract_test
+      - name: Run uncertain reconciliation concurrency contract test
+        run: python -m jarvis_next.uncertain_reconciliation_concurrency_contract_test
       - name: Run command adapter contract test
         run: python -m jarvis_next.command_adapter_contract_test
       - name: Run integration readiness contract test
