@@ -33,6 +33,8 @@ jobs:
         run: python -m jarvis_next.smoke_test
       - name: Run state event atomicity contract test
         run: python -m jarvis_next.state_event_atomicity_contract_test
+      - name: Run coupled step event atomicity contract test
+        run: python -m jarvis_next.step_event_atomicity_contract_test
       - name: Run worker idempotency key contract test
         run: python -m jarvis_next.runtime_idempotency_key_contract_test
       - name: Run adapter idempotency propagation contract test
@@ -67,7 +69,7 @@ jobs:
         run: python -m jarvis_next.approval_concurrency_contract_test
       - name: Run approval resolution concurrency contract test
         run: python -m jarvis_next.approval_resolution_concurrency_contract_test
-      - name: Run concurrent approval resume contract test
+      - name: Run concurrent approval resume contract
         run: python -m jarvis_next.runtime_approval_resume_concurrency_contract_test
       - name: Run result verifier contract test
         run: python -m jarvis_next.result_verifier_contract_test
