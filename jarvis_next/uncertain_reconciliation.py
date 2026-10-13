@@ -36,10 +36,20 @@ def _record_unknown_once(state, mission_id, raw_result, state_payload):
             {"status": "failed", "reconciliation": "unknown"},
             mission_id,
         )
-        state._insert_event(
-            "worker.uncertain_reconciled",
-            {"resolution": "unknown", "resumed": False},
-            mission_id,
+        # Keep the reconciliation event itself idempotent at the database
+        # boundary as a second guard against duplicate writers.
+        state.conn.execute(
+            "INSERT INTO events(mission_id,kind,payload,created_at) "
+            "SELECT ?,?,?,? WHERE NOT EXISTS ("
+            "SELECT 1 FROM events WHERE mission_id=? AND kind='worker.uncertain_reconciled' "
+            "AND json_extract(payload,'$.resolution')='unknown')",
+            (
+                mission_id,
+                "worker.uncertain_reconciled",
+                json.dumps({"resolution": "unknown", "resumed": False}),
+                state.now(),
+                mission_id,
+            ),
         )
         state.conn.commit()
         return result_payload
