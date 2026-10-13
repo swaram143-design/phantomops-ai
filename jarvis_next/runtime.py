@@ -19,6 +19,10 @@ class JarvisRuntime:
         if not error: return False
         e=str(error).lower()
         return any(x in e for x in ("timeout","timed out","temporarily","connection","429","503","502","rate limit","busy","try again","network"))
+    @staticmethod
+    def _durable(value):
+        """Normalize runtime values to the same JSON representation persisted by StateStore."""
+        return json.loads(json.dumps(value,default=str))
     def _verify(self,step,result):
         if not result.ok: return False,result.error or "worker reported failure"
         return self.verifier.verify(step,result.data)
@@ -38,7 +42,7 @@ class JarvisRuntime:
                 if not self.state.renew_mission(mid,owner): return False
         return True
     async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None,results=None,attempts=None,lease_owner=None):
-        results=list(results or []); attempts=dict(attempts or {}); ctx.setdefault("step_outputs",{})
+        results=list(results or []); attempts=dict(attempts or {}); ctx=self._durable(ctx); ctx.setdefault("step_outputs",{})
         for i in range(start_index,len(plan["steps"])):
             step=plan["steps"][i]; decision=self.permissions.check(step["action"])
             if decision.requires_approval and i != approved_step:
@@ -62,6 +66,7 @@ class JarvisRuntime:
                     attempt+=1; attempts[key]=attempt
                     try: result=await worker.run({**task,"attempt":attempt,"idempotency_key":execution_key})
                     except Exception as e: result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
+                    if result.ok: result=WorkerResult(True,data=self._durable(result.data),error=result.error,retryable=result.retryable)
                     verified,verification_error=self._verify(step,result)
                     if verified:
                         item={"status":"completed","worker":worker.name,"attempt":attempt,"data":result.data,"error":None,"step":step,"step_index":i}; results.append(item); self._record_output(ctx,i,result.data)
@@ -87,7 +92,7 @@ class JarvisRuntime:
                 return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost"}
         finally: stop.set(); await heartbeat
     async def submit(self,goal,context=None):
-        mid=self.state.create_mission(goal); ctx=dict(context or {})
+        mid=self.state.create_mission(goal); ctx=self._durable(dict(context or {}))
         try: plan=self.planner.plan(goal,ctx)
         except Exception as e:
             error=str(e) or e.__class__.__name__; result={"mission_id":mid,"status":"failed","error":error}; self.state.update_with_event(mid,status="failed",result=result,event_kind="mission.planning_failed",event_payload={"error":error}); return result
