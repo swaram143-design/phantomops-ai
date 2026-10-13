@@ -24,7 +24,7 @@ class AmbiguousWorker(Worker):
 
 class FixedPlanner:
     def plan(self, goal, context=None):
-        return {"goal": goal, "steps": [{"capability": "external_send", "action": "external_send"}]}
+        return {"goal": goal, "steps": [{"capability": "external_send", "action": "research"}]}
 
 
 def main():
