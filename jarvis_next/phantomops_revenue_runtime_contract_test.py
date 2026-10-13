@@ -1,3 +1,4 @@
+# Diagnostic branch marker: execute the CRM runtime trace under pull-request CI.
 import asyncio
 import os
 import tempfile
