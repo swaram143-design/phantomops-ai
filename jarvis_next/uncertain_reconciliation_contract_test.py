@@ -1,6 +1,7 @@
 import asyncio
 import json
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 from .adapters import Worker, WorkerRegistry, WorkerResult
 from .runtime import JarvisRuntime
@@ -85,6 +86,26 @@ async def run():
         unresolved = await reconcile_uncertain(second_runtime, second["mission_id"], "unknown")
         assert unresolved["status"] == "failed"
         assert unresolved["reconciliation"] == "unknown"
+
+        persisted_unknown = json.loads(second_state.get_mission(second["mission_id"])["result"])
+        assert persisted_unknown["reconciliation"]["resolution"] == "unknown"
+        event_count = second_state.conn.execute(
+            "SELECT COUNT(*) FROM events WHERE mission_id=? AND kind='worker.uncertain_reconciled'",
+            (second["mission_id"],),
+        ).fetchone()[0]
+        assert event_count == 1
+
+        async def call_unknown():
+            return await reconcile_uncertain(second_runtime, second["mission_id"], "unknown")
+
+        results = await asyncio.gather(call_unknown(), call_unknown(), call_unknown())
+        assert all(item["status"] == "failed" for item in results)
+        assert all(item["reconciliation"] == "unknown" for item in results)
+        event_count = second_state.conn.execute(
+            "SELECT COUNT(*) FROM events WHERE mission_id=? AND kind='worker.uncertain_reconciled'",
+            (second["mission_id"],),
+        ).fetchone()[0]
+        assert event_count == 1
 
 
 asyncio.run(run())
