@@ -40,6 +40,21 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
             if event_kind: self._insert_event(event_kind,event_payload or {},mid)
             self.conn.commit()
         except Exception: self.conn.rollback(); raise
+    def reconcile_uncertain_transition(self,mid,expected_result,plan,result,event_payload):
+        """Compare-and-swap an uncertain failed mission into running exactly once."""
+        plan_json=json.dumps(plan,default=str); result_json=json.dumps(result,default=str); now=self.now()
+        try:
+            cursor=self.conn.execute("UPDATE missions SET status='running',plan=?,result=?,updated_at=? WHERE id=? AND status='failed' AND result=?",(plan_json,result_json,now,mid,expected_result))
+            if cursor.rowcount == 0:
+                self.conn.rollback()
+                return False
+            self._insert_event("mission.updated",{"status":"running"},mid)
+            self._insert_event("worker.uncertain_reconciled",event_payload or {},mid)
+            self.conn.commit()
+            return True
+        except Exception:
+            self.conn.rollback()
+            raise
     def get_mission(self,mid):
         row=self.conn.execute("SELECT * FROM missions WHERE id=?",(mid,)).fetchone(); return dict(row) if row else None
     def has_mission_lease(self,mid,owner):
