@@ -21,7 +21,6 @@ class JarvisRuntime:
         return any(x in e for x in ("timeout","timed out","temporarily","connection","429","503","502","rate limit","busy","try again","network"))
     @staticmethod
     def _durable(value):
-        """Normalize runtime values to the same JSON representation persisted by StateStore."""
         return json.loads(json.dumps(value,default=str))
     def _verify(self,step,result):
         if not result.ok: return False,result.error or "worker reported failure"
@@ -33,6 +32,12 @@ class JarvisRuntime:
         protected={"goal","step","step_index","context","mission_id","attempt","idempotency_key","company","recipient","selected_target","selection_score"}
         for key,value in data.items():
             if key not in protected or key not in ctx: ctx[key]=value
+    @staticmethod
+    def _result_state(next_step,ctx,results,attempts,reconciliation=None,**extra):
+        payload={"next_step":next_step,"context":ctx,"results":results,"attempts":attempts}
+        if reconciliation is not None: payload["reconciliation"]=reconciliation
+        payload.update(extra)
+        return payload
     def _update(self,mid,owner,**kwargs): self.state.update(mid,lease_owner=owner,**kwargs)
     async def _lease_heartbeat(self,mid,owner,stop):
         interval=max(0.1,float(settings.mission_lease_seconds)/3.0)
@@ -41,7 +46,7 @@ class JarvisRuntime:
             except asyncio.TimeoutError:
                 if not self.state.renew_mission(mid,owner): return False
         return True
-    async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None,results=None,attempts=None,lease_owner=None):
+    async def _run(self,mid,goal,plan,ctx,start_index=0,approval_id=None,approved_step=None,results=None,attempts=None,lease_owner=None,reconciliation=None):
         results=list(results or []); attempts=dict(attempts or {}); ctx=self._durable(ctx); ctx.setdefault("step_outputs",{})
         for i in range(start_index,len(plan["steps"])):
             if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
@@ -49,18 +54,18 @@ class JarvisRuntime:
             step=plan["steps"][i]; decision=self.permissions.check(step["action"])
             if decision.requires_approval and i != approved_step:
                 aid=self.state.approval(mid,step["action"],{"step_index":i,"step":step,"context":ctx,"results":results,"attempts":attempts})
-                self._update(mid,lease_owner,status="awaiting_approval",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
+                self._update(mid,lease_owner,status="awaiting_approval",plan=plan,result=self._result_state(i,ctx,results,attempts,reconciliation))
                 return {"mission_id":mid,"status":"awaiting_approval","approval_id":aid,"step":step,"step_index":i,"results":results,"context":ctx}
             if not decision.allowed and i != approved_step:
                 item={"status":"blocked","reason":decision.reason,"step":step,"step_index":i}; results.append(item)
-                self._update(mid,lease_owner,status="blocked",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
+                self._update(mid,lease_owner,status="blocked",plan=plan,result=self._result_state(i,ctx,results,attempts,reconciliation))
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
             task=dict(ctx)
             task.update({"goal":goal,"step":step,"step_index":i,"context":ctx,"mission_id":mid})
             workers=self.workers.ranked(step["capability"],task) if self.workers else []
             if not workers:
                 item={"status":"blocked","reason":"no worker","step":step,"step_index":i}; results.append(item)
-                self._update(mid,lease_owner,status="blocked",plan=plan,result={"next_step":i,"context":ctx,"results":results,"attempts":attempts})
+                self._update(mid,lease_owner,status="blocked",plan=plan,result=self._result_state(i,ctx,results,attempts,reconciliation))
                 return {"mission_id":mid,"status":"blocked","results":results,"context":ctx}
             step_done=False; uncertain_outcome=False
             for worker in workers:
@@ -77,7 +82,7 @@ class JarvisRuntime:
                     verified,verification_error=self._verify(step,result)
                     if verified:
                         item={"status":"completed","worker":worker.name,"attempt":attempt,"data":result.data,"error":None,"step":step,"step_index":i}; results.append(item); self._record_output(ctx,i,result.data)
-                        self.state.update_with_event(mid,lease_owner=lease_owner,status="running",plan=plan,result={"next_step":i+1,"context":ctx,"results":results,"attempts":attempts},event_kind="step.completed",event_payload={"step_index":i,"capability":step["capability"],"worker":worker.name,"attempt":attempt,"verified":True})
+                        self.state.update_with_event(mid,lease_owner=lease_owner,status="running",plan=plan,result=self._result_state(i+1,ctx,results,attempts,reconciliation),event_kind="step.completed",event_payload={"step_index":i,"capability":step["capability"],"worker":worker.name,"attempt":attempt,"verified":True})
                         step_done=True; break
                     error=result.error or verification_error; retryable=result.retryable if result.error is not None else self._retryable(error)
                     item={"status":"retrying" if retryable and attempt<=self.max_retries else "failed","worker":worker.name,"attempt":attempt,"data":result.data,"error":error,"step":step,"step_index":i}
@@ -88,7 +93,7 @@ class JarvisRuntime:
                         uncertain_outcome=True
                         break
                     if retryable and attempt<=self.max_retries:
-                        self.state.update_with_event(mid,lease_owner=lease_owner,status="retrying",plan=plan,result={"next_step":i,"context":ctx,"results":results+[item],"attempts":attempts},event_kind="step.retry",event_payload={"step_index":i,"worker":worker.name,"attempt":attempt,"error":error})
+                        self.state.update_with_event(mid,lease_owner=lease_owner,status="retrying",plan=plan,result=self._result_state(i,ctx,results+[item],attempts,reconciliation),event_kind="step.retry",event_payload={"step_index":i,"worker":worker.name,"attempt":attempt,"error":error})
                         await asyncio.sleep(self.retry_delay*attempt); continue
                     results.append(item); self.state.event("worker.failed",{"step_index":i,"worker":worker.name,"error":error,"fallback_available":len(workers)>1},mid); break
                 if step_done or uncertain_outcome: break
@@ -96,10 +101,9 @@ class JarvisRuntime:
                     return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
                 self.state.event("worker.fallback",{"step_index":i,"failed_worker":worker.name},mid)
             if not step_done:
-                result_payload={"next_step":i,"context":ctx,"results":results,"attempts":attempts}
-                if uncertain_outcome: result_payload["side_effect_uncertain"]=True
-                self._update(mid,lease_owner,status="failed",plan=plan,result=result_payload); return {"mission_id":mid,"status":"failed","results":results,"context":ctx,"side_effect_uncertain":uncertain_outcome}
-        self._update(mid,lease_owner,status="completed",plan=plan,result={"next_step":len(plan["steps"]),"context":ctx,"results":results,"attempts":attempts}); return {"mission_id":mid,"status":"completed","results":results,"context":ctx}
+                result_payload=self._result_state(i,ctx,results,attempts,reconciliation,side_effect_uncertain=uncertain_outcome) if uncertain_outcome else self._result_state(i,ctx,results,attempts,reconciliation)
+                self._update(mid,lease_owner,status="failed",plan=plan,result=result_payload); return {"mission_id":mid,"status":"failed","results":results,"context":ctx,"side_effect_uncertain":uncertain_outcome,"reconciliation":reconciliation}
+        self._update(mid,lease_owner,status="completed",plan=plan,result=self._result_state(len(plan["steps"]),ctx,results,attempts,reconciliation)); return {"mission_id":mid,"status":"completed","results":results,"context":ctx,"reconciliation":reconciliation}
     async def _run_owned(self,mid,goal,plan,ctx,owner,**kwargs):
         stop=asyncio.Event(); heartbeat=asyncio.create_task(self._lease_heartbeat(mid,owner,stop))
         try:
@@ -148,5 +152,5 @@ class JarvisRuntime:
             current=self.state.get_mission(mid); return {"mission_id":mid,"status":"already_running","current_status":current["status"] if current else None}
         try:
             m=self.state.get_mission(mid); plan=json.loads(m["plan"]); state=json.loads(m["result"])
-            return await self._run_owned(mid,m["goal"],plan,state.get("context",{}),owner,start_index=state.get("next_step",0),results=state.get("results",[]),attempts=state.get("attempts",{}))
+            return await self._run_owned(mid,m["goal"],plan,state.get("context",{}),owner,start_index=state.get("next_step",0),results=state.get("results",[]),attempts=state.get("attempts",{}),reconciliation=state.get("reconciliation"))
         finally: self.state.release_mission(mid,owner)
