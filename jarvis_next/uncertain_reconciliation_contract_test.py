@@ -87,7 +87,8 @@ async def run():
         assert "side_effect_uncertain" not in applied_final
         applied_state.conn.close()
 
-        second_state = StateStore(db.name + ".second")
+        second_db = db.name + ".second"
+        second_state = StateStore(second_db)
         second_workers = WorkerRegistry()
         second_workers.register(AlwaysUncertain())
         second_runtime = JarvisRuntime(state=second_state, workers=second_workers, max_retries=2, retry_delay=0)
@@ -104,17 +105,25 @@ async def run():
             (second["mission_id"],),
         ).fetchone()[0]
         assert event_count == 1
+        second_state.conn.commit()
+        second_state.conn.close()
 
         with ThreadPoolExecutor(max_workers=3) as pool:
-            results = list(pool.map(lambda _: concurrent_unknown(db.name + ".second", second["mission_id"]), range(3)))
+            results = list(pool.map(lambda _: concurrent_unknown(second_db, second["mission_id"]), range(3)))
         assert all(item["status"] == "failed" for item in results)
         assert all(item["reconciliation"] == "unknown" for item in results)
-        event_count = second_state.conn.execute(
-            "SELECT COUNT(*) FROM events WHERE mission_id=? AND kind='worker.uncertain_reconciled'",
-            (second["mission_id"],),
-        ).fetchone()[0]
-        assert event_count == 1
-        second_state.conn.close()
+
+        verify_state = StateStore(second_db)
+        try:
+            persisted_after_concurrency = json.loads(verify_state.get_mission(second["mission_id"])["result"])
+            assert persisted_after_concurrency["reconciliation"]["resolution"] == "unknown"
+            event_count = verify_state.conn.execute(
+                "SELECT COUNT(*) FROM events WHERE mission_id=? AND kind='worker.uncertain_reconciled'",
+                (second["mission_id"],),
+            ).fetchone()[0]
+            assert event_count == 1
+        finally:
+            verify_state.conn.close()
 
 
 asyncio.run(run())
