@@ -16,7 +16,8 @@ async def reconcile_uncertain(runtime, mission_id, resolution):
         raise KeyError(mission_id)
     if mission["status"] != "failed" or not mission["result"]:
         raise ValueError("Mission is not awaiting uncertain-outcome reconciliation")
-    state = json.loads(mission["result"])
+    raw_result = mission["result"]
+    state = json.loads(raw_result)
     if not state.get("side_effect_uncertain"):
         raise ValueError("Mission does not contain an uncertain external outcome")
     if resolution == "unknown":
@@ -36,16 +37,17 @@ async def reconcile_uncertain(runtime, mission_id, resolution):
         "previous_next_step": current,
     }
     state.pop("side_effect_uncertain", None)
-    runtime.state.update_with_event(
+    claimed = runtime.state.reconcile_uncertain_transition(
         mission_id,
-        status="running",
-        plan=plan,
-        result=state,
-        event_kind="worker.uncertain_reconciled",
-        event_payload={
+        raw_result,
+        plan,
+        state,
+        {
             "resolution": resolution,
             "previous_next_step": current,
             "next_step": next_step,
         },
     )
+    if not claimed:
+        raise ValueError("Mission is no longer awaiting uncertain-outcome reconciliation")
     return await runtime.resume_mission(mission_id)
