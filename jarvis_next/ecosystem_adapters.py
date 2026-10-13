@@ -38,8 +38,8 @@ def _idempotency_headers(task: dict[str, Any]) -> dict[str, str]:
 
 
 def _ambiguous_timeout(exc: BaseException, adapter: str) -> WorkerResult:
-    """A request timeout has unknown remote outcome; never blindly retry it."""
-    return WorkerResult(False, error=f"{adapter} request outcome unknown after timeout: {exc}", retryable=False)
+    """A request timeout has unknown remote outcome; never blindly retry or fall back."""
+    return WorkerResult(False, error=f"{adapter} request outcome unknown after timeout: {exc}", retryable=False, side_effect_uncertain=True)
 
 
 def _is_timeout_error(exc: BaseException) -> bool:
@@ -189,5 +189,4 @@ class TwentyAdapter(Worker):
         except Exception as exc:
             if _is_timeout_error(exc): return _ambiguous_timeout(exc, "Twenty")
             return WorkerResult(False, error=str(exc), retryable=True)
-    def health(self):
-        configured = bool(os.getenv("JARVIS_TWENTY_URL") and os.getenv("JARVIS_TWENTY_API_KEY")); return {"ok": configured, "configured": configured, "base_url": bool(os.getenv("JARVIS_TWENTY_URL")), "api_key": bool(os.getenv("JARVIS_TWENTY_API_KEY"))}
+    def health(self): configured = bool(os.getenv("JARVIS_TWENTY_URL") and os.getenv("JARVIS_TWENTY_API_KEY")); return {"ok": configured, "configured": configured, "base_url": bool(os.getenv("JARVIS_TWENTY_URL")), "api_key": bool(os.getenv("JARVIS_TWENTY_API_KEY"))}
