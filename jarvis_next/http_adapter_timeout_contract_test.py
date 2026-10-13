@@ -16,14 +16,14 @@ async def scenario():
         )
     }
     try:
-        # Port 9 is the discard service and is normally closed; using a very
-        # small timeout keeps this contract deterministic without external I/O.
-        os.environ["JARVIS_N8N_WEBHOOK_URL"] = "http://10.255.255.1:9/timeout"
+        # Use a closed loopback port to test a connection failure deterministically.
+        # Actual response/read timeouts are covered by the ambiguous-timeout contract.
+        os.environ["JARVIS_N8N_WEBHOOK_URL"] = "http://127.0.0.1:9/timeout"
         os.environ["JARVIS_N8N_TIMEOUT"] = "0.01"
         n8n = await N8NAdapter().run({"mission_id": "m", "goal": "timeout", "step": {}, "context": {}})
         assert not n8n.ok and n8n.retryable
 
-        os.environ["JARVIS_TWENTY_URL"] = "http://10.255.255.1:9"
+        os.environ["JARVIS_TWENTY_URL"] = "http://127.0.0.1:9"
         os.environ["JARVIS_TWENTY_API_KEY"] = "test-key"
         os.environ["JARVIS_TWENTY_TIMEOUT"] = "0.01"
         twenty = await TwentyAdapter().run({
