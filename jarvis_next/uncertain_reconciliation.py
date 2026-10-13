@@ -11,18 +11,25 @@ def _record_unknown_once(state, mission_id, raw_result, state_payload):
     result_json = json.dumps(result_payload, default=str)
     now = state.now()
     try:
+        # Serialize competing reconcilers before evaluating the CAS predicate.
+        # Each worker may have performed a read that opened a deferred SQLite
+        # transaction, so close that snapshot before acquiring the write lock.
+        state.conn.commit()
+        state.conn.execute("BEGIN IMMEDIATE")
         cursor = state.conn.execute(
             "UPDATE missions SET result=?, updated_at=? WHERE id=? AND status='failed' AND result=?",
             (result_json, now, mission_id, raw_result),
         )
         if cursor.rowcount == 0:
-            state.conn.rollback()
             current = state.get_mission(mission_id)
             if not current:
+                state.conn.rollback()
                 raise KeyError(mission_id)
             current_result = json.loads(current["result"] or "{}")
             if current_result.get("reconciliation", {}).get("resolution") == "unknown":
+                state.conn.commit()
                 return current_result
+            state.conn.rollback()
             raise ValueError("Mission is no longer awaiting uncertain-outcome reconciliation")
         state._insert_event(
             "mission.updated",
