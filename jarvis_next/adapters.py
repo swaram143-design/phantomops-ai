@@ -6,6 +6,7 @@ class WorkerResult:
     data: object = None
     error: str = None
     retryable: bool = False
+    side_effect_uncertain: bool = False
 
 class Worker:
     name = "worker"
