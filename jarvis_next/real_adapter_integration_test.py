@@ -19,13 +19,12 @@ class WebhookHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         body = self.rfile.read(length)
         payload = json.loads(body.decode("utf-8"))
-        self.__class__.calls.append(
-            {
-                "path": self.path,
-                "payload": payload,
-                "auth": self.headers.get("Authorization"),
-            }
-        )
+        self.__class__.calls.append({
+            "path": self.path,
+            "payload": payload,
+            "auth": self.headers.get("Authorization"),
+            "idempotency_key": self.headers.get("Idempotency-Key"),
+        })
         response = {
             "success": True,
             "id": "crm-acme-001" if self.path == "/twenty/rest/companies" else "workflow-001",
@@ -73,39 +72,41 @@ async def scenario():
     try:
         twenty = TwentyAdapter()
         n8n = N8NAdapter()
-        direct = await twenty.run(
-            {
-                "goal": "sync Acme Clinic",
-                "mission_id": "m-direct",
-                "step": {"capability": "crm_sync", "action": "workflow_trigger"},
-                "context": {
-                    "company": "Acme Clinic",
-                    "recipient": "owner@acme.example",
-                    "need": "appointment recovery",
-                    "selection_score": 91,
-                },
-            }
-        )
+        direct = await twenty.run({
+            "goal": "sync Acme Clinic",
+            "mission_id": "m-direct",
+            "idempotency_key": "direct-twenty-key",
+            "step": {"capability": "crm_sync", "action": "workflow_trigger"},
+            "context": {
+                "company": "Acme Clinic",
+                "recipient": "owner@acme.example",
+                "need": "appointment recovery",
+                "selection_score": 91,
+            },
+        })
         assert direct.ok and direct.data["id"] == "crm-acme-001"
         assert WebhookHandler.calls[-1]["auth"] == "Bearer test-key"
+        assert WebhookHandler.calls[-1]["idempotency_key"] == "direct-twenty-key"
         assert WebhookHandler.calls[0]["payload"]["name"] == "Acme Clinic"
         assert WebhookHandler.calls[0]["payload"]["email"] == "owner@acme.example"
         assert WebhookHandler.calls[0]["payload"]["need"] == "appointment recovery"
         assert WebhookHandler.calls[0]["payload"]["score"] == 91
+        assert WebhookHandler.calls[0]["payload"]["idempotency_key"] == "direct-twenty-key"
 
-        workflow = await n8n.run(
-            {
-                "goal": "schedule follow-up",
-                "mission_id": "m-direct",
-                "step": {"capability": "followup_automation", "action": "workflow_trigger"},
-                "context": {"company": "Acme Clinic", "crm_id": "crm-acme-001", "sent": True},
-            }
-        )
+        workflow = await n8n.run({
+            "goal": "schedule follow-up",
+            "mission_id": "m-direct",
+            "idempotency_key": "direct-n8n-key",
+            "step": {"capability": "followup_automation", "action": "workflow_trigger"},
+            "context": {"company": "Acme Clinic", "crm_id": "crm-acme-001", "sent": True},
+        })
         assert workflow.ok and workflow.data["id"] == "workflow-001"
         assert WebhookHandler.calls[-1]["auth"] == "Bearer test-token"
+        assert WebhookHandler.calls[-1]["idempotency_key"] == "direct-n8n-key"
         assert WebhookHandler.calls[1]["payload"]["context"]["company"] == "Acme Clinic"
         assert WebhookHandler.calls[1]["payload"]["context"]["crm_id"] == "crm-acme-001"
         assert WebhookHandler.calls[1]["payload"]["context"]["sent"] is True
+        assert WebhookHandler.calls[1]["payload"]["idempotency_key"] == "direct-n8n-key"
 
         with tempfile.TemporaryDirectory() as tmp:
             db = f"{tmp}/jarvis.db"
@@ -114,12 +115,7 @@ async def scenario():
             registry.register(twenty)
             registry.register(SendWorker())
             registry.register(n8n)
-            runtime = JarvisRuntime(
-                state=state,
-                workers=registry,
-                permissions=PermissionEngine("WORK"),
-                max_retries=0,
-            )
+            runtime = JarvisRuntime(state=state, workers=registry, permissions=PermissionEngine("WORK"), max_retries=0)
             plan = {
                 "goal": "real adapter revenue test",
                 "steps": [
@@ -130,27 +126,17 @@ async def scenario():
             }
             runtime.planner.plan = lambda goal, context: plan
             before_runtime_calls = len(WebhookHandler.calls)
-            first = await runtime.submit(
-                "real adapter revenue test",
-                {
-                    "company": "Acme Clinic",
-                    "recipient": "owner@acme.example",
-                    "need": "appointment recovery",
-                    "selection_score": 91,
-                },
-            )
+            first = await runtime.submit("real adapter revenue test", {
+                "company": "Acme Clinic",
+                "recipient": "owner@acme.example",
+                "need": "appointment recovery",
+                "selection_score": 91,
+            })
             assert first["status"] == "awaiting_approval" and first["step_index"] == 0
-            assert len(WebhookHandler.calls) == before_runtime_calls, (
-                "CRM side effect must not happen before approval"
-            )
+            assert len(WebhookHandler.calls) == before_runtime_calls, "CRM side effect must not happen before approval"
 
             approval = first["approval_id"]
-            restarted = JarvisRuntime(
-                state=StateStore(db),
-                workers=registry,
-                permissions=PermissionEngine("WORK"),
-                max_retries=0,
-            )
+            restarted = JarvisRuntime(state=StateStore(db), workers=registry, permissions=PermissionEngine("WORK"), max_retries=0)
             resumed = await restarted.resume_mission(first["mission_id"])
             assert resumed["status"] == "awaiting_approval" and resumed["approval_id"] == approval
 
@@ -158,6 +144,9 @@ async def scenario():
             assert after_crm["status"] == "awaiting_approval" and after_crm["step_index"] == 1
             assert after_crm["context"].get("id") == "crm-acme-001"
             assert after_crm["context"]["company"] == "Acme Clinic"
+            runtime_crm_call = next(c for c in WebhookHandler.calls[before_runtime_calls:] if c["path"] == "/twenty/rest/companies")
+            assert runtime_crm_call["idempotency_key"] == f"{first['mission_id']}:0:twenty"
+            assert runtime_crm_call["payload"]["idempotency_key"] == f"{first['mission_id']}:0:twenty"
 
             send_approval = after_crm["approval_id"]
             after_send = await restarted.resume(send_approval, approved=True)
@@ -166,11 +155,11 @@ async def scenario():
 
             final = await restarted.resume(after_send["approval_id"], approved=True)
             assert final["status"] == "completed"
+            runtime_n8n_call = next(c for c in WebhookHandler.calls[before_runtime_calls:] if c["path"] == "/n8n")
+            assert runtime_n8n_call["idempotency_key"] == f"{first['mission_id']}:2:n8n"
+            assert runtime_n8n_call["payload"]["idempotency_key"] == f"{first['mission_id']}:2:n8n"
             assert any(c["path"] == "/twenty/rest/companies" for c in WebhookHandler.calls)
-            assert any(
-                c["path"] == "/n8n" and c["payload"]["context"].get("crm_id")
-                for c in WebhookHandler.calls
-            )
+            assert any(c["path"] == "/n8n" and c["payload"]["context"].get("crm_id") for c in WebhookHandler.calls)
     finally:
         for key, value in old.items():
             if value is None:
