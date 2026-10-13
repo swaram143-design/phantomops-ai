@@ -53,6 +53,8 @@ jobs:
         run: python -m jarvis_next.nexus_route_contract_test
       - name: Run revenue chain contract test
         run: python -m jarvis_next.revenue_chain_test
+      - name: Run real PhantomOps revenue runtime contract
+        run: python -m jarvis_next.phantomops_revenue_runtime_contract_test
       - name: Run planner policy test
         run: python -m jarvis_next.planner_policy_test
       - name: Run planner side-effect contract test
