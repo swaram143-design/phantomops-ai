@@ -29,7 +29,8 @@ async def main():
 
     try:
         registry = WorkerRegistry()
-        registry.register(PhantomOpsAdapter())
+        adapter = PhantomOpsAdapter()
+        registry.register(adapter)
         runtime = JarvisRuntime(
             StateStore(db),
             registry,
@@ -38,8 +39,6 @@ async def main():
             retry_delay=0,
         )
 
-        # Exercise the real PhantomOps worker and runtime approval flow while
-        # keeping network-dependent lead discovery outside this deterministic test.
         runtime.planner.plan = lambda goal, context: {
             "goal": goal,
             "steps": [
@@ -60,6 +59,22 @@ async def main():
                 "score": 9,
             }]
         }
+
+        direct_crm = await adapter.run({
+            "goal": "execute revenue workflow",
+            "step": {"capability": "crm_sync", "action": "workflow_trigger"},
+            "context": {
+                **context,
+                "company": "JARVIS Test Clinic",
+                "recipient": "owner@jarvis-test.example",
+            },
+            "mission_id": "direct-contract",
+            "idempotency_key": "direct-contract:2:phantomops",
+            "attempt": 1,
+        })
+        assert direct_crm.ok is True, direct_crm
+        assert direct_crm.data["crm_synced"] is True, direct_crm
+        assert direct_crm.data["crm_id"].startswith("local-crm:"), direct_crm
 
         first = await runtime.submit("execute revenue workflow", context)
         assert first["status"] == "awaiting_approval", first
