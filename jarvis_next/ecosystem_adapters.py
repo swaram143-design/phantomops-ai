@@ -37,6 +37,11 @@ def _idempotency_headers(task: dict[str, Any]) -> dict[str, str]:
     return {"Idempotency-Key": key} if key else {}
 
 
+def _ambiguous_timeout(exc: BaseException, adapter: str) -> WorkerResult:
+    """A request timeout has unknown remote outcome; never blindly retry it."""
+    return WorkerResult(False, error=f"{adapter} request outcome unknown after timeout: {exc}", retryable=False)
+
+
 async def _run_command(command: list[str], *, cwd: str | None = None, timeout: int = 900, env: dict[str, str] | None = None) -> WorkerResult:
     try:
         proc = await asyncio.create_subprocess_exec(*command, cwd=cwd, env={**os.environ, **(env or {})}, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
@@ -96,6 +101,8 @@ class PaperclipAdapter(Worker):
             return WorkerResult(True, parsed)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace"); return WorkerResult(False, error=f"Paperclip HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
+        except TimeoutError as exc:
+            return _ambiguous_timeout(exc, "Paperclip")
         except Exception as exc: return WorkerResult(False, error=str(exc), retryable=True)
     def health(self): return {"ok": bool(os.getenv("JARVIS_PAPERCLIP_URL") and os.getenv("JARVIS_PAPERCLIP_TOKEN") and os.getenv("JARVIS_PAPERCLIP_COMPANY_ID"))}
 
@@ -134,6 +141,8 @@ class N8NAdapter(Worker):
             return WorkerResult(True, parsed)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace"); return WorkerResult(False, error=f"n8n HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
+        except TimeoutError as exc:
+            return _ambiguous_timeout(exc, "n8n")
         except Exception as exc: return WorkerResult(False, error=str(exc), retryable=True)
     def health(self): return {"ok": bool(os.getenv("JARVIS_N8N_WEBHOOK_URL")), "configured": bool(os.getenv("JARVIS_N8N_WEBHOOK_URL"))}
 
@@ -157,6 +166,8 @@ class TwentyAdapter(Worker):
             return WorkerResult(True, parsed)
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace"); return WorkerResult(False, error=f"Twenty HTTP {exc.code}: {body}", retryable=exc.code in (429,502,503,504))
+        except TimeoutError as exc:
+            return _ambiguous_timeout(exc, "Twenty")
         except Exception as exc: return WorkerResult(False, error=str(exc), retryable=True)
     def health(self):
         configured = bool(os.getenv("JARVIS_TWENTY_URL") and os.getenv("JARVIS_TWENTY_API_KEY")); return {"ok": configured, "configured": configured, "base_url": bool(os.getenv("JARVIS_TWENTY_URL")), "api_key": bool(os.getenv("JARVIS_TWENTY_API_KEY"))}
