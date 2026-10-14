@@ -24,6 +24,7 @@ def test_compatibility_execution_surfaces_route_through_govi():
         "core/autonomous_runtime.py",
         "core/execution_pipeline.py",
         "core/workflow_engine.py",
+        "core/jarvis_orchestrator.py",
     ):
         imports = _imports(ROOT / relative)
         assert "jarvis_next.govi_core" in imports, relative
@@ -38,6 +39,16 @@ def test_legacy_workflow_engine_no_longer_activates_local_agents():
     assert "govi.submit" in source
 
 
+def test_legacy_jarvis_orchestrator_has_no_independent_runtime():
+    source = (ROOT / "core/jarvis_orchestrator.py").read_text(encoding="utf-8")
+    assert "LegacyJarvisFacade" in source
+    assert "GoviCore" in source
+    assert "while True" not in source
+    assert "input(" not in source
+    assert "route_task(" not in source
+    assert "JarvisRuntime" not in source
+
+
 def test_legacy_queue_is_only_a_queue():
     source = (ROOT / "core/task_queue_v2.py").read_text(encoding="utf-8")
     assert "jarvis_orchestrator_v2" not in source
@@ -47,5 +58,6 @@ def test_legacy_queue_is_only_a_queue():
 if __name__ == "__main__":
     test_compatibility_execution_surfaces_route_through_govi()
     test_legacy_workflow_engine_no_longer_activates_local_agents()
+    test_legacy_jarvis_orchestrator_has_no_independent_runtime()
     test_legacy_queue_is_only_a_queue()
     print("LEGACY EXECUTION BOUNDARY CONTRACT OK")
