@@ -5,7 +5,11 @@ from .adapters import Worker, WorkerResult
 
 
 class NexusLegacyAdapter(Worker):
-    """Bridge JARVIS-NEXT to the stable NEXUS GRAM supervisor."""
+    """Bridge JARVIS-NEXT to the stable NEXUS GRAM supervisor.
+
+    GOVI is the executive authority and is intentionally not exposed as a
+    worker capability. This adapter remains a legacy GRAM/NEXUS worker bridge.
+    """
 
     name = "nexus_legacy"
     capabilities = {
@@ -13,7 +17,7 @@ class NexusLegacyAdapter(Worker):
         "email_outreach", "followup", "analytics", "marketplace_mining",
         "marketplace_bidding", "live_marketplace", "outreach_draft", "campaign",
         "inbox_monitor", "autonomous_followup", "crm_sanitizer", "learning_feedback",
-        "lead_intelligence", "executive_report", "govi",
+        "lead_intelligence", "executive_report",
     }
 
     def __init__(self, nexus_root=None):
