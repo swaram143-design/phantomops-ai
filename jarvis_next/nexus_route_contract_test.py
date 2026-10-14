@@ -2,6 +2,7 @@ from .nexus_adapter import NexusLegacyAdapter
 
 
 # Source-derived from the stable NEXUS GRAM task_router route table.
+# GOVI is executive authority, not a NEXUS worker route.
 EXPECTED_NEXUS_ROUTES = {
     "lead",
     "opportunity",
@@ -21,7 +22,6 @@ EXPECTED_NEXUS_ROUTES = {
     "inbox_monitor",
     "lead_intelligence",
     "executive_report",
-    "govi",
 }
 
 
@@ -29,6 +29,7 @@ def main():
     adapter = NexusLegacyAdapter("/configured/nexus")
     missing = EXPECTED_NEXUS_ROUTES - adapter.capabilities
     assert not missing, f"JARVIS adapter missing NEXUS routes: {sorted(missing)}"
+    assert "govi" not in adapter.capabilities
     print("JARVIS-NEXT NEXUS ROUTE CONTRACT OK")
 
 
