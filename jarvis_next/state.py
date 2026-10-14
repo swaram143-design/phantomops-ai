@@ -106,6 +106,21 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         if status not in ("approved","rejected"): raise ValueError(status)
         row=self.get_approval(aid)
         if not row: raise KeyError(aid)
+        mission=self.get_mission(row["mission_id"])
+        if not mission or not mission.get("plan"):
+            raise ValueError("Approval no longer matches a stored mission plan")
+        try:
+            payload=json.loads(row["payload"] or "{}")
+            plan=json.loads(mission["plan"] or "{}")
+            step_index=int(payload.get("step_index",-1))
+            steps=plan.get("steps",[])
+            if step_index < 0 or step_index >= len(steps):
+                raise ValueError("Approval no longer matches the stored mission plan")
+            planned_step=steps[step_index]
+            if payload.get("step") != planned_step or row["action"] != planned_step.get("action"):
+                raise ValueError("Approval no longer matches the stored mission plan")
+        except (TypeError,ValueError,KeyError,json.JSONDecodeError):
+            raise ValueError("Approval no longer matches the stored mission plan")
         try:
             cursor=self.conn.execute("UPDATE approvals SET status=?,resolved_at=? WHERE id=? AND status='pending'",(status,self.now(),aid))
             if cursor.rowcount == 0: self.conn.rollback(); return None
