@@ -20,7 +20,16 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         self.conn.commit()
     def now(self): return datetime.now(timezone.utc).isoformat()
     def _insert_event(self,kind,payload,mid=None): self.conn.execute("INSERT INTO events(mission_id,kind,payload,created_at) VALUES(?,?,?,?)",(mid,kind,json.dumps(payload,default=str),self.now()))
-    def event(self,kind,payload,mid=None): self._insert_event(kind,payload,mid); self.conn.commit()
+    def event(self,kind,payload,mid=None,lease_owner=None):
+        try:
+            if lease_owner is None:
+                self._insert_event(kind,payload,mid); self.conn.commit(); return True
+            cursor=self.conn.execute("UPDATE missions SET updated_at=? WHERE id=? AND lease_owner=? AND lease_expires_at>?",(self.now(),mid,lease_owner,self.now()))
+            if cursor.rowcount == 0:
+                self.conn.rollback(); return False
+            self._insert_event(kind,payload,mid); self.conn.commit(); return True
+        except Exception:
+            self.conn.rollback(); raise
     def create_mission(self,goal):
         mid=str(uuid.uuid4()); n=self.now()
         try:
