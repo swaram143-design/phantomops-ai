@@ -19,7 +19,7 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         if "lease_expires_at" not in columns: self.conn.execute("ALTER TABLE missions ADD COLUMN lease_expires_at TEXT")
         self.conn.commit()
     def now(self): return datetime.now(timezone.utc).isoformat()
-    def _insert_event(self,kind,payload,mid=None): self.conn.execute("INSERT INTO events(mission_id,kind,payload,created_at) VALUES(?,?,?,?)",(mid,kind,json.dumps(payload,default=str),self.now()))
+    def _insert_event(self,kind,payload,mid=None): self.conn.execute("INSERT INTO events(mission_id,kind,payload,created_at) VALUES(?,?,?,?)",(mid,json.dumps(payload,default=str),self.now()))
     def event(self,kind,payload,mid=None,lease_owner=None):
         try:
             if lease_owner is None:
@@ -130,8 +130,14 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
                 raise ValueError("Approval no longer matches the stored mission plan")
         except (TypeError,ValueError,KeyError,json.JSONDecodeError):
             raise ValueError("Approval no longer matches the stored mission plan")
+        now=datetime.now(timezone.utc); now_iso=now.isoformat()
         try:
-            cursor=self.conn.execute("UPDATE approvals SET status=?,resolved_at=? WHERE id=? AND status='pending'",(status,self.now(),aid))
+            if mission["status"] == "awaiting_approval" and mission.get("lease_owner") and mission.get("lease_expires_at"):
+                next_status="running" if status == "approved" else "rejected"
+                lease_cursor=self.conn.execute("UPDATE missions SET status=?,updated_at=? WHERE id=? AND status='awaiting_approval' AND lease_owner=? AND lease_expires_at>?",(next_status,now_iso,row["mission_id"],mission["lease_owner"],now_iso))
+                if lease_cursor.rowcount == 0:
+                    self.conn.rollback(); return None
+            cursor=self.conn.execute("UPDATE approvals SET status=?,resolved_at=? WHERE id=? AND status='pending'",(status,now_iso,aid))
             if cursor.rowcount == 0: self.conn.rollback(); return None
             self._insert_event("approval.resolved",{"approval_id":aid,"status":status},row["mission_id"]); self.conn.commit(); return self.get_approval(aid)
         except Exception: self.conn.rollback(); raise
