@@ -39,6 +39,8 @@ jobs:
         run: python -m jarvis_next.runtime_result_serialization_contract_test
       - name: Run adapter idempotency propagation contract test
         run: python -m jarvis_next.adapter_idempotency_propagation_contract_test
+      - name: Run worker health exception redaction contract test
+        run: python -m jarvis_next.worker_health_redaction_contract_test
       - name: Run bootstrap contract test
         run: python -m jarvis_next.bootstrap_contract_test
       - name: Run ecosystem registry contract test
