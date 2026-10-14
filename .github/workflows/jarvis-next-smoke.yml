@@ -1,6 +1,7 @@
 name: JARVIS-NEXT Smoke Test
 
 # Keep canonical jarvis-next validation runnable on direct branch pushes and manual dispatch.
+# Validation includes strict idempotency for repeated uncertain-outcome reconciliation.
 on:
   workflow_dispatch:
   push:
