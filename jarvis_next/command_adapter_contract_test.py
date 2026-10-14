@@ -22,8 +22,9 @@ async def scenario():
 
     timed_out = await _run_command([sys.executable, "-c", "import time; time.sleep(2)"], timeout=1)
     assert not timed_out.ok
-    assert timed_out.retryable
-    assert timed_out.error == "command timeout after 1s"
+    assert not timed_out.retryable
+    assert timed_out.side_effect_uncertain is True
+    assert timed_out.error == "command outcome unknown after timeout of 1s"
 
     missing = await _run_command(["jarvis-command-that-does-not-exist-9f1a"], timeout=5)
     assert not missing.ok
