@@ -79,6 +79,15 @@ class JarvisRuntime:
                     try: result=await worker.run({**task,"attempt":attempt,"idempotency_key":execution_key})
                     except Exception as e: result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
                     if result.ok: result=WorkerResult(True,data=self._durable(result.data),error=result.error,retryable=result.retryable,side_effect_uncertain=result.side_effect_uncertain)
+                    # An uncertain external outcome always takes precedence over
+                    # an otherwise successful transport response. We cannot safely
+                    # mark the step completed until the external state is reconciled.
+                    if result.side_effect_uncertain:
+                        item={"status":"failed","worker":worker.name,"attempt":attempt,"data":result.data,"error":result.error or "external outcome unknown","step":step,"step_index":i,"side_effect_uncertain":True}
+                        results.append(item)
+                        self.state.event("worker.uncertain",{"step_index":i,"worker":worker.name,"attempt":attempt,"error":item["error"],"fallback_blocked":True},mid)
+                        uncertain_outcome=True
+                        break
                     verified,verification_error=self._verify(step,result)
                     if verified:
                         item={"status":"completed","worker":worker.name,"attempt":attempt,"data":result.data,"error":None,"step":step,"step_index":i}; results.append(item); self._record_output(ctx,i,result.data)
@@ -86,12 +95,6 @@ class JarvisRuntime:
                         step_done=True; break
                     error=result.error or verification_error; retryable=result.retryable if result.error is not None else self._retryable(error)
                     item={"status":"retrying" if retryable and attempt<=self.max_retries else "failed","worker":worker.name,"attempt":attempt,"data":result.data,"error":error,"step":step,"step_index":i}
-                    if result.side_effect_uncertain:
-                        item["side_effect_uncertain"]=True
-                        results.append(item)
-                        self.state.event("worker.uncertain",{"step_index":i,"worker":worker.name,"attempt":attempt,"error":error,"fallback_blocked":True},mid)
-                        uncertain_outcome=True
-                        break
                     if retryable and attempt<=self.max_retries:
                         self.state.update_with_event(mid,lease_owner=lease_owner,status="retrying",plan=plan,result=self._result_state(i,ctx,results+[item],attempts,reconciliation),event_kind="step.retry",event_payload={"step_index":i,"worker":worker.name,"attempt":attempt,"error":error})
                         await asyncio.sleep(self.retry_delay*attempt); continue
