@@ -2,7 +2,8 @@
 
 This module never sends a workflow, CRM write, message, call, or payment.
 It only inspects local configuration and registered worker health metadata.
-Use it before a controlled real revenue mission.
+Configuration completeness is not treated as proof that a service is reachable,
+authenticated, authorized, or successfully executable.
 """
 
 from __future__ import annotations
@@ -48,6 +49,7 @@ def check_readiness() -> dict[str, Any]:
     )
     statuses = {"n8n": n8n_status, "twenty": twenty_status}
     required = {name: status["configured"] for name, status in statuses.items()}
+    configuration_complete = all(required.values())
 
     permission = PermissionEngine(os.getenv("JARVIS_PERMISSION", "WORK"))
     gates = {
@@ -58,7 +60,11 @@ def check_readiness() -> dict[str, Any]:
         for action in SENSITIVE_ACTIONS
     }
     return {
-        "ready_for_controlled_revenue_mission": all(required.values()),
+        # This flag means configuration is complete only. No network probe is
+        # performed here, so it must not be presented as proof of live readiness.
+        "configured_for_controlled_revenue_mission": configuration_complete,
+        "ready_for_controlled_revenue_mission": False,
+        "readiness_basis": "configuration_only_no_network_probe",
         "integrations": required,
         "integration_status": statuses,
         "worker_health": health,
@@ -77,9 +83,10 @@ def format_readiness(result: dict[str, Any]) -> str:
     for action, gate in result["approval_gates"].items():
         lines.append(f"  {action}: approval_required={gate['requires_approval']}")
     lines.append(
-        "Controlled revenue mission: "
-        + ("READY" if result["ready_for_controlled_revenue_mission"] else "NOT READY")
+        "Configuration complete for controlled revenue mission: "
+        + ("YES" if result["configured_for_controlled_revenue_mission"] else "NO")
     )
+    lines.append("Live readiness proven: NO (no network probe performed)")
     lines.append("Side effects performed: NO")
     return "\n".join(lines)
 
