@@ -55,9 +55,18 @@ def test_legacy_queue_is_only_a_queue():
     assert "GoviCore" not in source
 
 
+def test_legacy_desktop_scheduler_has_no_import_time_loop():
+    path = ROOT / "automation/task_automation.py"
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    top_level_loops = [node for node in tree.body if isinstance(node, (ast.For, ast.While))]
+    assert not top_level_loops
+    assert "run_scheduled_loop" in path.read_text(encoding="utf-8")
+
+
 if __name__ == "__main__":
     test_compatibility_execution_surfaces_route_through_govi()
     test_legacy_workflow_engine_no_longer_activates_local_agents()
     test_legacy_jarvis_orchestrator_has_no_independent_runtime()
     test_legacy_queue_is_only_a_queue()
+    test_legacy_desktop_scheduler_has_no_import_time_loop()
     print("LEGACY EXECUTION BOUNDARY CONTRACT OK")
