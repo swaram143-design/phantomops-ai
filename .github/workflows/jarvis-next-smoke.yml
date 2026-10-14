@@ -29,6 +29,8 @@ jobs:
         run: python -m pip install -r requirements.txt
       - name: Run GOVI Core facade contract test
         run: python -m jarvis_next.govi_core_contract_test
+      - name: Run legacy orchestrator authority boundary contract test
+        run: python -m jarvis_next.legacy_boundary_contract_test
       - name: Run JARVIS-NEXT smoke test
         run: python -m jarvis_next.smoke_test
       - name: Run state event atomicity contract test
