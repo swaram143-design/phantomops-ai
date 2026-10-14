@@ -98,6 +98,11 @@ async def run():
         assert unresolved["status"] == "failed"
         assert unresolved["reconciliation"] == "unknown"
 
+        # Repeating the same unknown decision must be a pure idempotent read:
+        # it must not rewrite the mission or emit another reconciliation event.
+        repeated = await reconcile_uncertain(second_runtime, second["mission_id"], "unknown")
+        assert repeated == unresolved
+
         persisted_unknown = json.loads(second_state.get_mission(second["mission_id"])["result"])
         assert persisted_unknown["reconciliation"]["resolution"] == "unknown"
         event_count = second_state.conn.execute(
