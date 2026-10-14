@@ -8,11 +8,13 @@ on:
     branches: [jarvis-next]
     paths:
       - 'jarvis_next/**'
+      - 'core/**'
       - '.github/workflows/jarvis-next-smoke.yml'
   pull_request:
     branches: [jarvis-next]
     paths:
       - 'jarvis_next/**'
+      - 'core/**'
       - '.github/workflows/jarvis-next-smoke.yml'
 
 jobs:
@@ -31,6 +33,8 @@ jobs:
         run: python -m jarvis_next.govi_core_contract_test
       - name: Run legacy orchestrator authority boundary contract test
         run: python -m jarvis_next.legacy_boundary_contract_test
+      - name: Run legacy execution boundary contract test
+        run: python -m jarvis_next.legacy_execution_boundary_contract_test
       - name: Run JARVIS-NEXT smoke test
         run: python -m jarvis_next.smoke_test
       - name: Run state event atomicity contract test
