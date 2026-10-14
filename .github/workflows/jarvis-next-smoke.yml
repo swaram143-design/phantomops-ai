@@ -35,6 +35,8 @@ jobs:
         run: python -m jarvis_next.legacy_boundary_contract_test
       - name: Run legacy execution boundary contract test
         run: python -m jarvis_next.legacy_execution_boundary_contract_test
+      - name: Run PhantomOps adapter boundary contract test
+        run: python -m jarvis_next.phantomops_adapter_boundary_contract_test
       - name: Run JARVIS-NEXT smoke test
         run: python -m jarvis_next.smoke_test
       - name: Run state event atomicity contract test
