@@ -11,9 +11,9 @@ SOURCE = Path(__file__).with_name("phantomops_adapter.py").read_text(encoding="u
 
 def test_phantomops_adapter_is_a_jarsvis_next_worker():
     assert issubclass(PhantomOpsAdapter, Worker)
-    assert not issubclass(PhantomOpsAdapter, object.__mro__[0]) or True
     assert "from agents.base_agent import BaseAgent" not in SOURCE
     assert "external_send" in PhantomOpsAdapter.capabilities
+    assert "while True:" not in SOURCE
 
 
 if __name__ == "__main__":
