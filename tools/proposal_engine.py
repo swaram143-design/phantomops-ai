@@ -1,136 +1,51 @@
-from datetime import (
-    datetime
-)
+from datetime import datetime
 
 
 class ProposalEngine:
+    """Generate the low-friction PhantomOps revenue pilot offer."""
 
-    def __init__(self):
+    PILOT_PRICE = "₹9,999"
+    MONTHLY_PRICE = "₹19,999–₹29,999/month"
 
-        self.base_services = [
+    def generate_proposal(self, company, need):
+        company = company or "Prospect"
+        need = need or "lead generation and follow-up automation"
 
-            {
-                "name":
-                    "AI Automation System",
+        return f"""PHANTOMOPS AI
+7-DAY LEAD AUTOMATION PILOT
 
-                "price":
-                    "$1500"
-            },
+Prepared: {datetime.now():%Y-%m-%d}
 
-            {
-                "name":
-                    "CRM Integration",
-
-                "price":
-                    "$800"
-            },
-
-            {
-                "name":
-                    "Lead Generation Automation",
-
-                "price":
-                    "$1200"
-            },
-
-            {
-                "name":
-                    "Autonomous Workflow System",
-
-                "price":
-                    "$2000"
-            }
-        ]
-
-    def generate_proposal(
-        self,
-        company,
-        need
-    ):
-
-        services = []
-
-        total = 0
-
-        for service in (
-            self.base_services
-        ):
-
-            if (
-
-                "automation"
-                in need.lower()
-
-                or
-
-                "workflow"
-                in need.lower()
-
-            ):
-
-                services.append(
-                    service
-                )
-
-                price = int(
-
-                    service[
-                        "price"
-                    ].replace(
-                        "$",
-                        ""
-                    )
-                )
-
-                total += price
-
-        proposal = f"""
-PHANTOMOPS AI
-Automation Proposal
-
-Generated:
-{datetime.now()}
-
-Client:
+Prospect:
 {company}
 
-Project Need:
+Business Need:
 {need}
 
-Recommended Services:
-"""
+WHAT WE WILL DO
+- Find and qualify relevant prospects
+- Prepare personalized outreach for qualified prospects
+- Capture prospects in a simple CRM pipeline
+- Set up follow-up automation
+- Operate the pilot campaign for 7 days
+- Provide campaign results and next-step recommendations
 
-        for service in services:
+YOUR APPROVAL CONTROL
+No external outreach is sent without your approval.
 
-            proposal += f"""
+PILOT INVESTMENT
+{self.PILOT_PRICE} one-time
 
-- {service['name']}
-  Estimated Price:
-  {service['price']}
-"""
+AFTER THE PILOT
+If the pilot produces useful results, managed automation is available at
+{self.MONTHLY_PRICE}, depending on campaign volume and scope.
 
-        proposal += f"""
-
-Estimated Total:
-${total}
-
-Implementation Includes:
-- AI workflow automation
-- CRM integrations
-- lead management systems
-- autonomous followups
-- revenue pipeline intelligence
-
-Timeline:
-2-4 weeks
+EXPECTED START
+Configuration can begin after approval and payment.
 
 Prepared by:
 PhantomOps AI
 """
 
-        return proposal
 
-
-proposal_engine = (
-    ProposalEngine()
-)
+proposal_engine = ProposalEngine()
