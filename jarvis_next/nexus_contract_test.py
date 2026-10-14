@@ -36,6 +36,8 @@ async def main():
         install_fake_nexus(root, supervisor)
 
         adapter = NexusLegacyAdapter(root)
+        assert "govi" not in adapter.capabilities
+        assert adapter.score({"step": {"capability": "govi"}}) == 0
         assert adapter.score({"step": {"capability": "research"}}) == 80
         assert adapter.score({"step": {"capability": "unknown"}}) == 0
 
