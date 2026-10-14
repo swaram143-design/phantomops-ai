@@ -78,6 +78,12 @@ class JarvisRuntime:
                     attempt+=1; attempts[key]=attempt
                     try: result=await worker.run({**task,"attempt":attempt,"idempotency_key":execution_key})
                     except Exception as e: result=WorkerResult(False,error=str(e),retryable=self._retryable(e))
+                    if lease_owner is not None and not self.state.has_mission_lease(mid,lease_owner):
+                        # A worker may finish after the lease expires. Its result
+                        # must not be interpreted or emitted by the stale owner;
+                        # a later owner will resume from durable state and reuse
+                        # the same idempotency key for external side-effect safety.
+                        return {"mission_id":mid,"status":"lease_lost","error":"mission lease lost","results":results,"context":ctx}
                     if result.ok: result=WorkerResult(True,data=self._durable(result.data),error=result.error,retryable=result.retryable,side_effect_uncertain=result.side_effect_uncertain)
                     # An uncertain external outcome always takes precedence over
                     # an otherwise successful transport response. We cannot safely
