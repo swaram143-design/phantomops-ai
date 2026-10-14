@@ -20,8 +20,7 @@ class JarvisRuntime:
         e=str(error).lower()
         return any(x in e for x in ("timeout","timed out","temporarily","connection","429","503","502","rate limit","busy","try again","network"))
     @staticmethod
-    def _durable(value):
-        return json.loads(json.dumps(value,default=str))
+    def _durable(value): return json.loads(json.dumps(value,default=str))
     def _verify(self,step,result):
         if not result.ok: return False,result.error or "worker reported failure"
         return self.verifier.verify(step,result.data)
@@ -137,7 +136,7 @@ class JarvisRuntime:
         if not self.state.claim_mission(mid,owner,statuses=("awaiting_approval","running","retrying","blocked")):
             current=self.state.get_mission(mid); return {"mission_id":mid,"status":"already_running","approval_id":approval_id,"current_status":current["status"] if current else None}
         try:
-            resolved=self.state.resolve_approval(approval_id,"approved" if approved else "rejected")
+            resolved=self.state.resolve_approval(approval_id,"approved" if approved else "rejected",lease_owner=owner)
             if resolved is None:
                 current=self.state.get_approval(approval_id); return {"mission_id":mid,"status":current["status"],"approval_id":approval_id}
             m=self.state.get_mission(mid); payload=json.loads(a["payload"]); plan=json.loads(m["plan"])
