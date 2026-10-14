@@ -37,10 +37,21 @@ class PhantomOpsAdapter(Worker):
         if not items:
             return {"company": "Prospect", "need": goal, "recipient": None, "selected_target": None}
 
-        def score(x):
-            s = 0
+        def contacts_for(item):
+            contacts = item.get("contacts")
+            return [c for c in contacts if isinstance(c, dict)] if isinstance(contacts, list) else []
+
+        def first_email(item):
             for key in ("email", "contact_email", "recipient"):
-                s += 3 if x.get(key) else 0
+                if item.get(key):
+                    return item[key]
+            for contact in contacts_for(item):
+                if contact.get("email"):
+                    return contact["email"]
+            return None
+
+        def score(x):
+            s = 3 if first_email(x) else 0
             for key in ("website", "company", "name", "title"):
                 s += 1 if x.get(key) else 0
             for key in ("intent", "score", "opportunity_score", "buyer_intent"):
@@ -52,11 +63,10 @@ class PhantomOpsAdapter(Worker):
         target = max(items, key=score)
         company = target.get("company") or target.get("name") or target.get("title") or "Prospect"
         need = target.get("need") or target.get("description") or target.get("reason") or goal
-        recipient = target.get("email") or target.get("recipient") or target.get("contact_email") or target.get("contact")
         return {
             "company": company,
             "need": need,
-            "recipient": recipient,
+            "recipient": first_email(target),
             "selected_target": target,
             "selection_score": score(target),
         }
