@@ -8,11 +8,15 @@ CAPABILITIES={
     "legacy_agent","lead","proposal_delivery","email_outreach","followup","analytics",
     "marketplace_mining","marketplace_bidding","live_marketplace","outreach_draft","campaign",
     "inbox_monitor","autonomous_followup","crm_sanitizer","learning_feedback","lead_intelligence",
-    "executive_report","govi","swarm","learning","multi_agent","analysis",
+    "executive_report","swarm","learning","multi_agent","analysis",
     "org_task","delegation","business_management","heartbeat",
     "voice_receptionist","appointment_booking","message_taking",
     "workflow_automation","crm_sync","integration","followup_automation",
 }
+
+# Executive authorities are not worker capabilities. GOVI owns mission
+# submission/resumption and worker routing; a worker plan must never target it.
+RESERVED_EXECUTIVE_CAPABILITIES={"govi"}
 
 # Keep planner output semantically aligned with the worker capability when an
 # action can cause an external side effect. PermissionEngine still provides
@@ -64,6 +68,8 @@ class MissionPlanner:
                 raise PlanValidationError("each step must be an object")
             capability=raw.get("capability")
             action=raw.get("action")
+            if capability in RESERVED_EXECUTIVE_CAPABILITIES:
+                raise PlanValidationError(f"reserved executive capability cannot be planned as a worker: {capability}")
             if capability not in CAPABILITIES:
                 raise PlanValidationError(f"unknown capability: {capability}")
             if action not in ALLOWED_ACTIONS:
