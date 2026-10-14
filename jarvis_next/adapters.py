@@ -48,5 +48,10 @@ class WorkerRegistry:
             try:
                 results[name] = worker.health()
             except Exception as exc:
-                results[name] = {"ok": False, "error": str(exc)}
+                # Never expose exception text from a worker health check: it can
+                # contain credentials, request URLs, headers, or other secrets.
+                results[name] = {
+                    "ok": False,
+                    "error": f"{type(exc).__name__}: worker health check failed",
+                }
         return results
