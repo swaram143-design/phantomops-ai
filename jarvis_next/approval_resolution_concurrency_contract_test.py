@@ -8,10 +8,21 @@ def main():
     with tempfile.NamedTemporaryFile(suffix=".db") as db:
         first = StateStore(db.name)
         mission_id = first.create_mission("concurrent approval resolution")
+        plan = {
+            "goal": "concurrent approval resolution",
+            "steps": [{"capability": "external_send", "action": "external_send"}],
+        }
+        first.update(mission_id, status="awaiting_approval", plan=plan, result={"next_step": 0})
         approval_id = first.approval(
             mission_id,
             "external_send",
-            {"step_index": 0, "action": "external_send"},
+            {
+                "step_index": 0,
+                "step": plan["steps"][0],
+                "context": {},
+                "results": [],
+                "attempts": {},
+            },
         )
         first.conn.close()
 
