@@ -1,5 +1,3 @@
-from agents.base_agent import BaseAgent
-
 from .adapters import Worker, WorkerResult
 
 
@@ -87,10 +85,6 @@ class PhantomOpsAdapter(Worker):
                 target = merged if merged.get("selected_target") else self._pick_target(merged, goal)
                 company = target.get("company", "Prospect")
                 need = target.get("need", goal)
-
-                # Generate the proposal artifact directly. ProposalAgent also sends a
-                # Telegram notification, which would be an unintended side effect before
-                # the runtime's external-send approval gate.
                 from tools.proposal_engine import proposal_engine
                 from tools.pdf_proposal_engine import pdf_proposal_engine
                 proposal = proposal_engine.generate_proposal(company, need)
