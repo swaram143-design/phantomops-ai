@@ -111,7 +111,7 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         row=self.conn.execute("SELECT * FROM approvals WHERE mission_id=? AND status='pending' ORDER BY created_at DESC LIMIT 1",(mid,)).fetchone(); return dict(row) if row else None
     def get_approval(self,aid):
         row=self.conn.execute("SELECT * FROM approvals WHERE id=?",(aid,)).fetchone(); return dict(row) if row else None
-    def resolve_approval(self,aid,status):
+    def resolve_approval(self,aid,status,lease_owner=None):
         if status not in ("approved","rejected"): raise ValueError(status)
         row=self.get_approval(aid)
         if not row: raise KeyError(aid)
@@ -132,9 +132,12 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
             raise ValueError("Approval no longer matches the stored mission plan")
         now=datetime.now(timezone.utc); now_iso=now.isoformat()
         try:
-            if mission["status"] == "awaiting_approval" and mission.get("lease_owner") and mission.get("lease_expires_at"):
-                next_status="running" if status == "approved" else "rejected"
-                lease_cursor=self.conn.execute("UPDATE missions SET status=?,updated_at=? WHERE id=? AND status='awaiting_approval' AND lease_owner=? AND lease_expires_at>?",(next_status,now_iso,row["mission_id"],mission["lease_owner"],now_iso))
+            if lease_owner is not None:
+                lease_cursor=self.conn.execute("UPDATE missions SET status=?,updated_at=? WHERE id=? AND status='awaiting_approval' AND lease_owner=? AND lease_expires_at>?",("running" if status == "approved" else "rejected",now_iso,row["mission_id"],lease_owner,now_iso))
+                if lease_cursor.rowcount == 0:
+                    self.conn.rollback(); return None
+            elif mission["status"] == "awaiting_approval" and mission.get("lease_owner") and mission.get("lease_expires_at"):
+                lease_cursor=self.conn.execute("UPDATE missions SET status=?,updated_at=? WHERE id=? AND status='awaiting_approval' AND lease_owner=? AND lease_expires_at>?",("running" if status == "approved" else "rejected",now_iso,row["mission_id"],mission["lease_owner"],now_iso))
                 if lease_cursor.rowcount == 0:
                     self.conn.rollback(); return None
             cursor=self.conn.execute("UPDATE approvals SET status=?,resolved_at=? WHERE id=? AND status='pending'",(status,now_iso,aid))
