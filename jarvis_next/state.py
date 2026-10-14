@@ -19,7 +19,7 @@ ON approvals(mission_id,action,payload) WHERE status='pending';""")
         if "lease_expires_at" not in columns: self.conn.execute("ALTER TABLE missions ADD COLUMN lease_expires_at TEXT")
         self.conn.commit()
     def now(self): return datetime.now(timezone.utc).isoformat()
-    def _insert_event(self,kind,payload,mid=None): self.conn.execute("INSERT INTO events(mission_id,kind,payload,created_at) VALUES(?,?,?,?)",(mid,json.dumps(payload,default=str),self.now()))
+    def _insert_event(self,kind,payload,mid=None): self.conn.execute("INSERT INTO events(mission_id,kind,payload,created_at) VALUES(?,?,?,?)",(mid,kind,json.dumps(payload,default=str),self.now()))
     def event(self,kind,payload,mid=None,lease_owner=None):
         try:
             if lease_owner is None:
