@@ -64,7 +64,8 @@ async def reconcile_uncertain(runtime, mission_id, resolution):
     ``confirmed_applied`` advances past the uncertain step.
     ``confirmed_not_applied`` retries the uncertain step.
     ``unknown`` records that no execution decision is authorized and leaves the
-    mission failed. Unknown decisions are persisted atomically and idempotently.
+    mission failed. Repeating an already-recorded unknown decision is strictly
+    idempotent and must not rewrite the mission or emit another event.
     """
     if resolution not in ("confirmed_applied", "confirmed_not_applied", "unknown"):
         raise ValueError(resolution)
@@ -75,8 +76,19 @@ async def reconcile_uncertain(runtime, mission_id, resolution):
         raise ValueError("Mission is not awaiting uncertain-outcome reconciliation")
     raw_result = mission["result"]
     state = json.loads(raw_result)
+
+    # Check the persisted reconciliation decision before inspecting
+    # side_effect_uncertain. The latter intentionally remains true for an
+    # unresolved unknown outcome, so checking it first would re-enter the
+    # write path and could emit duplicate reconciliation events.
+    existing = state.get("reconciliation", {}).get("resolution")
+    if existing == "unknown":
+        if resolution == "unknown":
+            return {"mission_id": mission_id, "status": "failed", "reconciliation": "unknown"}
+        # A later confirmed decision is still allowed to resolve the original
+        # uncertainty; it must go through the normal CAS transition below.
+
     if not state.get("side_effect_uncertain"):
-        existing = state.get("reconciliation", {}).get("resolution")
         if resolution == "unknown" and existing == "unknown":
             return {"mission_id": mission_id, "status": "failed", "reconciliation": "unknown"}
         raise ValueError("Mission does not contain an uncertain external outcome")
