@@ -67,6 +67,8 @@ jobs:
         run: python -m jarvis_next.runtime_permission_gate_test
       - name: Run approval rejection contract test
         run: python -m jarvis_next.approval_rejection_contract_test
+      - name: Run approval plan binding contract test
+        run: python -m jarvis_next.approval_plan_binding_contract_test
       - name: Run approval deduplication contract test
         run: python -m jarvis_next.approval_deduplication_contract_test
       - name: Run approval concurrency contract test
