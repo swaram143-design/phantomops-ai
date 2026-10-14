@@ -2,9 +2,11 @@ from core.task_queue_v2 import (
     task_queue
 )
 
-from core.jarvis_orchestrator_v2 import (
-    jarvis
-)
+from jarvis_next.govi_core import GoviCore
+
+
+# Compatibility pipeline retained; mission execution is owned by GOVI.
+govi = GoviCore()
 
 
 class ExecutionPipeline:
@@ -28,7 +30,7 @@ class ExecutionPipeline:
                 f"{task}"
             )
 
-            result = await jarvis.execute_goal(
+            result = await govi.submit(
                 task
             )
 
