@@ -31,6 +31,14 @@ class AlwaysUncertain(Worker):
         return WorkerResult(False, error="external outcome unknown", retryable=False, side_effect_uncertain=True)
 
 
+class UncertainButTransportSuccess(Worker):
+    name = "uncertain_but_transport_success"
+    capabilities = {"research"}
+
+    async def run(self, task):
+        return WorkerResult(True, {"transport": "accepted"}, side_effect_uncertain=True)
+
+
 class FixedPlanner:
     def plan(self, goal, context=None):
         return {"goal": goal, "steps": [{"capability": "research", "action": "research"}]}
@@ -87,6 +95,23 @@ async def run():
         assert "side_effect_uncertain" not in applied_final
         applied_state.conn.close()
 
+        # A transport-level success does not override an explicitly uncertain
+        # external outcome. It must remain failed until reconciled.
+        uncertain_success_state = StateStore(db.name + ".transport_success")
+        uncertain_success_workers = WorkerRegistry()
+        uncertain_success_workers.register(UncertainButTransportSuccess())
+        uncertain_success_runtime = JarvisRuntime(state=uncertain_success_state, workers=uncertain_success_workers, max_retries=2, retry_delay=0)
+        uncertain_success_runtime.planner = FixedPlanner()
+        uncertain_success = await uncertain_success_runtime.submit("transport accepted but external outcome unknown")
+        assert uncertain_success["status"] == "failed"
+        assert uncertain_success["side_effect_uncertain"] is True
+        assert uncertain_success["results"][0]["status"] == "failed"
+        assert uncertain_success["results"][0]["side_effect_uncertain"] is True
+        transport_state = json.loads(uncertain_success_state.get_mission(uncertain_success["mission_id"])["result"])
+        assert transport_state["side_effect_uncertain"] is True
+        assert transport_state["next_step"] == 0
+        uncertain_success_state.conn.close()
+
         second_db = db.name + ".second"
         second_state = StateStore(second_db)
         second_workers = WorkerRegistry()
@@ -98,8 +123,6 @@ async def run():
         assert unresolved["status"] == "failed"
         assert unresolved["reconciliation"] == "unknown"
 
-        # Repeating the same unknown decision must be a pure idempotent read:
-        # it must not rewrite the mission or emit another reconciliation event.
         repeated = await reconcile_uncertain(second_runtime, second["mission_id"], "unknown")
         assert repeated == unresolved
 
