@@ -23,6 +23,8 @@ async def main():
     async def send(self, task):
         assert task["recipient"] == "owner@jarvis-test.example"
         assert task["proposal"]
+        assert "₹9,999" in task["proposal"]
+        assert "7-DAY LEAD AUTOMATION PILOT" in task["proposal"]
         return {"success": True, "sent": True, "transport": "contract-test"}
 
     ProposalDeliveryAgent.execute = send
@@ -96,6 +98,7 @@ async def main():
         assert first["step_index"] == 2, first
         assert first["context"]["company"] == "JARVIS Test Clinic", first
         assert first["context"]["pdf"].endswith("_proposal.pdf"), first
+        assert "₹9,999" in first["context"]["proposal"], first
 
         crm = await runtime.resume(first["approval_id"], approved=True)
         assert crm["status"] == "awaiting_approval", crm
