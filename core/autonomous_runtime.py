@@ -1,8 +1,11 @@
 import asyncio
 
-from core.jarvis_orchestrator_v2 import (
-    jarvis
-)
+from jarvis_next.govi_core import GoviCore
+
+
+# Legacy scheduler retained for compatibility; execution authority now flows
+# through GOVI -> JARVIS-NEXT instead of the legacy core.Jarvis orchestrator.
+govi = GoviCore()
 
 
 class AutonomousRuntime:
@@ -28,11 +31,8 @@ class AutonomousRuntime:
                     "Scanning live marketplace..."
                 )
 
-                result = await jarvis.execute_goal(
-                    {
-                        "type":
-                            "live_marketplace"
-                    }
+                result = await govi.submit(
+                    {"type": "live_marketplace"}
                 )
 
                 print(
@@ -64,11 +64,8 @@ class AutonomousRuntime:
                     "Scanning inbox..."
                 )
 
-                result = await jarvis.execute_goal(
-                    {
-                        "type":
-                            "inbox_monitor"
-                    }
+                result = await govi.submit(
+                    {"type": "inbox_monitor"}
                 )
 
                 print(
