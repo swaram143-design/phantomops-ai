@@ -171,7 +171,7 @@ return (
         </h1>
 
         <p className="text-xs text-zinc-500 mt-1">
-          Autonomous AI Infrastructure Platform
+          Healthcare Enquiry & Follow-up Operations
         </p>
       </div>
 
@@ -322,22 +322,22 @@ return (
 
         <h1 className="text-7xl lg:text-8xl font-black leading-none tracking-tight">
 
-          Building AI
+          Recover More
 
           <span className="block text-zinc-500 mt-4">
-            Business Systems
+            Healthcare Enquiries
           </span>
 
           <span className="block mt-4">
-            That Operate 24/7
+            With Reliable Follow-up
           </span>
 
         </h1>
 
         <p className="text-zinc-400 text-xl leading-relaxed mt-10 max-w-2xl">
-          PhantomOps AI builds autonomous commercial intelligence systems,
-          CRM infrastructure, healthcare AI automation, outreach engines,
-          and operational AI runtimes for modern businesses.
+          PhantomOps AI helps clinics and diagnostic centres organise every enquiry,
+          track follow-ups, monitor appointment outcomes and understand where
+          potential revenue is being lost.
         </p>
 
         <div className="flex flex-wrap gap-5 mt-14">
@@ -377,10 +377,10 @@ return (
 <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-16">
 
   {[
-    ["98%", "Automation Efficiency"],
-    ["12,847", "Leads Processed"],
-    ["24/7", "Runtime Stability"],
-    ["400+", "Marketplace Sources"],
+    ["Capture", "Enquiry tracking"],
+    ["Assign", "Staff ownership"],
+    ["Follow up", "Due reminders"],
+    ["Measure", "Weekly reporting"],
   ].map((item, index) => (
 
    <motion.div
@@ -479,22 +479,22 @@ return (
       <div className="text-center mb-20">
 
         <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-5">
-          Live AI Products
+          Healthcare Revenue Operations
         </p>
 
         <h2 className="text-6xl font-black leading-none">
 
-          Autonomous AI
+          One Clear Goal
 
           <span className="block text-zinc-500 mt-4">
-            Infrastructure Systems
+            Fewer Missed Enquiries
           </span>
 
         </h2>
 
         <p className="text-zinc-400 text-xl max-w-4xl mx-auto mt-10 leading-relaxed">
-          Production-grade autonomous systems currently operating inside
-          the PhantomOps runtime infrastructure.
+          A managed enquiry and follow-up workflow for clinics and diagnostic
+          centres, starting with a measurable, human-supervised pilot.
         </p>
 
       </div>
@@ -502,57 +502,18 @@ return (
       <div className="grid lg:grid-cols-2 gap-8">
 
         {[
-      {
-  title: "PhantomOps CRM Intelligence",
-  status: "LIVE",
-  features: [
-    "AI lead scoring",
-    "Proposal generation",
-    "Autonomous followups",
-    "Revenue analytics",
-    "CRM automation",
-  ],
-  primary: "Open Dashboard",
-  secondary: "View Runtime",
-},
           {
-            title: "MediOps AI",
-            status: "HEALTHCARE ACTIVE",
+            title: "Healthcare Revenue Desk",
+            status: "14-DAY PAID PILOT",
             features: [
-              "Patient workflows",
-              "Triage automation",
-              "Diagnostics support",
-              "Hospital admin AI",
-              "Medical automation",
+              "Enquiry capture and status tracking",
+              "Staff ownership and follow-up reminders",
+              "Appointment outcome recording",
+              "Weekly enquiry and conversion report",
+              "Approval-controlled communication",
             ],
-            primary: "Explore System",
-            secondary: "View Medical Runtime",
-          },
-          {
-            title: "Outreach AI",
-            status: "AUTOMATION ACTIVE",
-            features: [
-              "AI cold outreach",
-              "Telegram automation",
-              "WhatsApp AI",
-              "Marketplace scanning",
-              "Proposal generation",
-            ],
-            primary: "Launch Outreach",
-            secondary: "Watch AI Pipeline",
-          },
-          {
-            title: "GRAM Runtime",
-            status: "ORCHESTRATION READY",
-            features: [
-              "Multi-agent hierarchy",
-              "Autonomous orchestration",
-              "Voice runtime",
-              "AI task delegation",
-              "Operational intelligence",
-            ],
-            primary: "Open Runtime",
-            secondary: "View Agents",
+            primary: "Request a Pilot",
+            secondary: "See Pilot Workflow",
           },
         ].map((item, index) => (
 
@@ -638,9 +599,9 @@ return (
 
         <h2 className="text-5xl lg:text-6xl font-black leading-none">
 
-          Live AI
+          The Pilot
           <span className="block text-zinc-500 mt-3">
-            Operational Feed
+            Operating Workflow
           </span>
 
         </h2>
@@ -666,14 +627,14 @@ return (
         <div className="space-y-5 font-mono text-sm">
 
           {[
-            "✓ Enterprise proposal generated successfully",
-            "✓ AI outreach pipeline launched",
-            "✓ Marketplace signal detected",
-            "✓ Revenue analytics synchronized",
-            "✓ CRM followup automation scheduled",
-            "✓ WhatsApp campaign deployed",
-            "✓ Lead score increased to 94%",
-            "✓ Autonomous runtime stabilized",
+            "1. Enquiry recorded",
+            "2. Enquiry assigned to staff",
+            "3. Follow-up due date tracked",
+            "4. Appointment outcome updated",
+            "5. Weekly performance report prepared",
+            "6. Manager reviews unresolved enquiries",
+            "7. Approved communication is prepared",
+            "8. Pilot results are reviewed with the clinic",
           ].map((item, index) => (
 
             <motion.div
@@ -1185,7 +1146,7 @@ return (
 
         <p className="text-zinc-400 leading-relaxed mb-6">
 
-          Autonomous AI operations infrastructure powering intelligent business automation, outreach systems, healthcare runtimes, and enterprise orchestration.
+          Managed enquiry tracking and follow-up operations for clinics and diagnostic centres.
 
         </p>
 
@@ -1327,21 +1288,22 @@ return (
       </button>
 
       <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-5">
-        Enterprise Automation Access
+        Healthcare Revenue Pilot
       </p>
 
       <h2 className="text-5xl font-black leading-tight mb-6">
 
-        Start Your
+        Recover More
         <span className="block text-zinc-500">
-          AI Infrastructure
+          Healthcare Enquiries
         </span>
 
       </h2>
 
       <p className="text-zinc-400 text-lg leading-relaxed mb-10">
 
-        Submit your operational requirements to activate autonomous AI deployment planning.
+        Tell us about your clinic or diagnostic centre. We will review your enquiry
+        workflow and discuss whether a 14-day pilot is suitable.
 
       </p>
 
@@ -1402,27 +1364,35 @@ return (
         <button
   onClick={async () => {
 
-    await supabase.from("leads").insert([
+    if (!leadData.name.trim() || !leadData.email.trim() || !leadData.company.trim()) {
+      window.alert("Please enter your name, email and clinic/company.");
+      return;
+    }
+
+    const { error } = await supabase.from("leads").insert([
       {
-        name: leadData.name,
-        email: leadData.email,
-        company: leadData.company,
-        requirement: leadData.requirement,
+        name: leadData.name.trim(),
+        email: leadData.email.trim(),
+        company: leadData.company.trim(),
+        requirement: leadData.requirement.trim(),
       },
     ]);
 
-    const message =
-      "Hello PhantomOps AI,%0A%0A" +
-      "Name: " + leadData.name + "%0A" +
-      "Email: " + leadData.email + "%0A" +
-      "Company: " + leadData.company + "%0A%0A" +
-      "Requirement:%0A" +
-      leadData.requirement +
-      "%0A%0A" +
-      "I want to activate AI infrastructure deployment.";
+    if (error) {
+      window.alert("We could not save your request. Please contact us directly on WhatsApp.");
+      return;
+    }
+
+    const message = [
+      "Hello PhantomOps AI, I want to discuss the Healthcare Revenue Pilot.",
+      "Name: " + leadData.name,
+      "Email: " + leadData.email,
+      "Clinic / Company: " + leadData.company,
+      "Requirement: " + leadData.requirement,
+    ].join("\n");
 
     window.open(
-      "https://wa.me/919177334156?text=" + message,
+      "https://wa.me/919177334156?text=" + encodeURIComponent(message),
       "_blank"
     );
 
@@ -1433,7 +1403,7 @@ return (
 >
 
   <span className="relative z-10">
-    Activate AI Deployment
+    Request Healthcare Pilot
   </span>
 
   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
