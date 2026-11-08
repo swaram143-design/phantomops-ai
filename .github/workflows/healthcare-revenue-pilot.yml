@@ -9,7 +9,7 @@ on:
       - 'tests/test_revenue_pilot_*.py'
       - '.github/workflows/healthcare-revenue-pilot.yml'
   pull_request:
-    branches: [revenue/healthcare-pilot-mvp]
+    branches: [jarvis-next]
     paths:
       - 'healthcare_revenue_api.py'
       - 'tools/email_tool.py'
