@@ -28,6 +28,12 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def to_utc_iso(value):
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat()
+
+
 def connect():
     parent = os.path.dirname(DB_PATH)
     if parent:
@@ -94,7 +100,7 @@ def health():
 def create_enquiry(payload: EnquiryCreate):
     now = utc_now()
     enquiry_id = str(uuid.uuid4())
-    followup = payload.next_followup_at.isoformat() if payload.next_followup_at else None
+    followup = to_utc_iso(payload.next_followup_at) if payload.next_followup_at else None
     with connect() as db:
         db.execute(
             """INSERT INTO enquiries
@@ -143,7 +149,7 @@ def update_enquiry(enquiry_id: str, payload: EnquiryUpdate):
             raise HTTPException(status_code=400, detail="Unsupported enquiry status.")
         changes["status"] = payload.status
     if payload.next_followup_at is not None:
-        changes["next_followup_at"] = payload.next_followup_at.isoformat()
+        changes["next_followup_at"] = to_utc_iso(payload.next_followup_at)
     if not changes:
         raise HTTPException(status_code=400, detail="No supported update fields supplied.")
     changes["updated_at"] = utc_now()
