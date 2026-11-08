@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "./supabase";
 
@@ -21,21 +21,6 @@ const [proposalLoading, setProposalLoading] = useState(false);
 const [loadingStep, setLoadingStep] = useState(
   "Initializing runtime..."
 );
-
-const runtimeEvents = [
-  "✓ Enterprise proposal generated successfully",
-  "✓ AI outreach pipeline launched",
-  "✓ Marketplace signal detected",
-  "✓ Revenue analytics synchronized",
-  "✓ CRM followup automation scheduled",
-  "✓ WhatsApp campaign deployed",
-  "✓ Lead score increased to 94%",
-  "✓ Autonomous runtime stabilized",
-  "✓ Multi-agent orchestration completed",
-  "✓ Healthcare diagnostics runtime active",
-];
-
-const [liveEvent, setLiveEvent] = useState(runtimeEvents[0]);
 
 const [proposalData, setProposalData] = useState({
   company: "",
@@ -104,22 +89,6 @@ setTimeout(() => {
 
 };
 
-useEffect(() => {
-
-  const interval = setInterval(() => {
-
-    const randomEvent =
-      runtimeEvents[
-        Math.floor(Math.random() * runtimeEvents.length)
-      ];
-
-    setLiveEvent(randomEvent);
-
-  }, 2500);
-
-  return () => clearInterval(interval);
-
-}, []);
 const scrollToSection = (id) => {
 
   const element = document.getElementById(id);
@@ -344,6 +313,7 @@ return (
 <motion.button
   whileHover={{ scale: 1.03 }}
   whileTap={{ scale: 0.97 }}
+  onClick={() => setShowLeadModal(true)}
   className="group relative overflow-hidden px-8 py-5 rounded-3xl bg-cyan-400 text-black font-black shadow-[0_0_60px_rgba(34,211,238,0.35)] hover:shadow-[0_0_90px_rgba(34,211,238,0.55)] transition-all duration-300"
 >
 
@@ -555,7 +525,7 @@ return (
             <div className="mt-10 flex flex-wrap gap-4">
 
   <button
-    onClick={() => triggerProposal(item.title)}
+    onClick={() => setShowLeadModal(true)}
     className="group relative overflow-hidden px-6 py-4 rounded-2xl bg-cyan-400 text-black font-black hover:scale-[1.03] transition-all duration-300"
   >
 
@@ -613,7 +583,7 @@ return (
         <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
 
         <span className="text-green-300 text-sm font-medium">
-          Runtime Infrastructure Active
+          Illustrative Workflow
         </span>
 
       </div>
@@ -651,7 +621,7 @@ return (
               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
 
               <p className="text-zinc-300">
-  {index === 0 ? liveEvent : item}
+  {item}
 </p>
 
             </motion.div>
@@ -684,12 +654,12 @@ return (
   className="text-6xl font-black mt-4"
 >
 
-  847h
+  14 Days
 
 </motion.h3>
 
             <p className="text-cyan-300 mt-4">
-              Continuous autonomous runtime
+              Pilot operating period
             </p>
 
           </div>
@@ -1045,11 +1015,11 @@ return (
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-6">
 
                   <p className="text-zinc-500 text-sm mb-2">
-                    Automation Gain
+                    Outcome Tracking
                   </p>
 
                   <h4 className="text-3xl font-black text-cyan-400">
-                    +82%
+                    Before / After
                   </h4>
 
                 </div>
@@ -1154,7 +1124,7 @@ return (
 
           <div className="w-2 h-2 rounded-full bg-green-400" />
 
-          Runtime Infrastructure Active
+          Illustrative Workflow
 
         </div>
 
@@ -1254,10 +1224,10 @@ return (
 
       <div className="flex items-center gap-6 text-sm text-zinc-500">
 
-        <span>GRAM Runtime v1.0.0</span>
+        <span>Healthcare Revenue Pilot</span>
 
         <span className="text-cyan-400">
-          24/7 Operational
+          Enquiry Follow-up Workflow
         </span>
 
       </div>
@@ -1439,7 +1409,7 @@ return (
       <div className="mb-10">
 
         <p className="text-cyan-400 uppercase tracking-[0.3em] text-xs mb-4">
-          AI CRM Infrastructure
+          Sample Pipeline Preview · Demo Data
         </p>
 
         <h2 className="text-5xl font-black">
@@ -1470,25 +1440,25 @@ return (
 
             {[
               {
-                name: "Ramesh",
-                company: "PhantomOps",
-                requirement: "Autonomous AI Infrastructure",
-                status: "HIGH PRIORITY",
-                score: "98%",
+                name: "Sample Clinic",
+                company: "Healthcare Revenue Desk",
+                requirement: "Enquiry follow-up workflow",
+                status: "DEMO DATA",
+                score: "—",
               },
               {
-                name: "MediCore Hospitals",
-                company: "MediOps AI",
-                requirement: "Hospital Workflow Automation",
-                status: "ACTIVE",
-                score: "94%",
+                name: "Sample Diagnostic Centre",
+                company: "Healthcare Revenue Desk",
+                requirement: "Appointment tracking",
+                status: "DEMO DATA",
+                score: "—",
               },
               {
-                name: "ScaleFlow Ventures",
-                company: "Outreach AI",
-                requirement: "AI Revenue Operations",
-                status: "PROPOSAL SENT",
-                score: "91%",
+                name: "Sample Multi-Speciality Clinic",
+                company: "Healthcare Revenue Desk",
+                requirement: "Weekly conversion reporting",
+                status: "DEMO DATA",
+                score: "—",
               },
             ].map((lead, index) => (
 
