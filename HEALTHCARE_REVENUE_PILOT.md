@@ -25,6 +25,18 @@ uvicorn healthcare_revenue_api:app --host 127.0.0.1 --port 8010
 Send `X-API-Key: <your key>` with every `/api/*` request. `/health` is public.
 Swagger docs are available at `/docs` on the local server.
 
+## Local operator dashboard
+
+Open a second Windows Command Prompt from the repository root. Set the same API key used by the API process, then run:
+
+```bat
+set PHANTOMOPS_API_KEY=your-local-secret
+set PHANTOMOPS_API_URL=http://127.0.0.1:8010
+streamlit run healthcare_revenue_app.py
+```
+
+The dashboard is intended for a trusted local operator on the same machine/network. Do not expose Streamlit or the API directly to the public internet without adding production authentication, HTTPS, access controls and deployment hardening.
+
 Example create:
 ```json
 {
