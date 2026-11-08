@@ -26,7 +26,7 @@ class HealthcareRevenuePilotTests(unittest.TestCase):
             contact_phone="+910000000000",
             service_category="General consultation",
             source="website",
-            next_followup_at=datetime(2026, 11, 10, 10, tzinfo=timezone.utc),
+            next_followup_at=datetime(2026, 11, 7, 20, tzinfo=timezone.utc),
         )
         created = api.create_enquiry(payload)
         self.assertEqual(created["status"], "new")
@@ -44,6 +44,7 @@ class HealthcareRevenuePilotTests(unittest.TestCase):
         metrics = api.metrics()
         self.assertEqual(metrics["total_enquiries"], 1)
         self.assertEqual(metrics["by_status"]["appointment_booked"], 1)
+        self.assertEqual(metrics["followups_due"], 1)
 
     def test_api_key_is_required_and_checked(self):
         with patch.dict(os.environ, {}, clear=True):
