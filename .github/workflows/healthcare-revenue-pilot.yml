@@ -1,0 +1,30 @@
+name: PhantomOps Healthcare Revenue Pilot Checks
+
+on:
+  push:
+    branches: [revenue/healthcare-pilot-mvp]
+    paths:
+      - 'healthcare_revenue_api.py'
+      - 'tools/email_tool.py'
+      - 'tests/test_revenue_pilot_*.py'
+      - '.github/workflows/healthcare-revenue-pilot.yml'
+  pull_request:
+    branches: [jarvis-next]
+    paths:
+      - 'healthcare_revenue_api.py'
+      - 'tools/email_tool.py'
+      - 'tests/test_revenue_pilot_*.py'
+      - '.github/workflows/healthcare-revenue-pilot.yml'
+
+jobs:
+  pilot-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install API dependencies
+        run: python -m pip install fastapi pydantic
+      - name: Run healthcare pilot and credential safety tests
+        run: python -m unittest discover -s tests -p 'test_revenue_pilot_*.py' -v
