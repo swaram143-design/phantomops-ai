@@ -2,7 +2,7 @@ name: PhantomOps Healthcare Revenue Pilot Checks
 
 on:
   push:
-    branches: [revenue/healthcare-pilot-mvp]
+    branches: [jarvis-next, revenue/healthcare-pilot-mvp]
     paths:
       - 'healthcare_revenue_api.py'
       - 'tools/email_tool.py'
