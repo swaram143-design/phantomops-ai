@@ -1,159 +1,64 @@
-import smtplib
 import os
-
-from email.mime.text import (
-    MIMEText
-)
-
-from email.mime.multipart import (
-    MIMEMultipart
-)
-
-from email.mime.base import (
-    MIMEBase
-)
+import smtplib
 
 from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 
 class EmailTool:
+    """SMTP delivery configured only through environment variables.
+
+    Never commit SMTP credentials. The previous repository credential must be
+    revoked at the provider because removing it from this file does not revoke it.
+    """
 
     def __init__(self):
+        self.email_address = os.getenv("SMTP_EMAIL", "").strip()
+        self.password = os.getenv("SMTP_PASSWORD", "").strip()
+        self.smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
+        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
 
-        self.email_address = (
-            "phantomops.automation@gmail.com"
-        )
+    def configured(self):
+        return bool(self.email_address and self.password)
 
-        self.password = (
-            "gvdt ngdp sbug kkjp"
-        )
+    def send_email(self, recipient, subject, body, attachment_path=None):
+        if not self.configured():
+            return {
+                "success": False,
+                "error": "SMTP is not configured. Set SMTP_EMAIL and SMTP_PASSWORD.",
+            }
 
-    def send_email(
-        self,
-        recipient,
-        subject,
-        body,
-        attachment_path=None
-    ):
+        if not recipient or not str(recipient).strip():
+            return {"success": False, "error": "A recipient email address is required."}
+
+        msg = MIMEMultipart()
+        msg["From"] = self.email_address
+        msg["To"] = str(recipient).strip()
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+
+        if attachment_path and os.path.isfile(attachment_path):
+            with open(attachment_path, "rb") as attachment:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                "attachment",
+                filename=os.path.basename(attachment_path),
+            )
+            msg.attach(part)
 
         try:
-
-            msg = (
-                MIMEMultipart()
-            )
-
-            msg[
-                "From"
-            ] = self.email_address
-
-            msg[
-                "To"
-            ] = recipient
-
-            msg[
-                "Subject"
-            ] = subject
-
-            msg.attach(
-                MIMEText(
-                    body,
-                    "plain"
-                )
-            )
-
-            if (
-
-                attachment_path
-
-                and
-
-                os.path.exists(
-                    attachment_path
-                )
-
-            ):
-
-                with open(
-                    attachment_path,
-                    "rb"
-                ) as attachment:
-
-                    part = (
-                        MIMEBase(
-                            "application",
-                            "octet-stream"
-                        )
-                    )
-
-                    part.set_payload(
-                        attachment.read()
-                    )
-
-                    encoders.encode_base64(
-                        part
-                    )
-
-                    filename = (
-                        os.path.basename(
-                            attachment_path
-                        )
-                    )
-
-                    part.add_header(
-                        "Content-Disposition",
-                        f"attachment; filename={filename}"
-                    )
-
-                    msg.attach(
-                        part
-                    )
-
-            server = (
-                smtplib.SMTP(
-                    "smtp.gmail.com",
-                    587
-                )
-            )
-
-            server.starttls()
-
-            server.login(
-                self.email_address,
-                self.password
-            )
-
-            server.sendmail(
-                self.email_address,
-                recipient,
-                msg.as_string()
-            )
-
-            server.quit()
-
-            print(
-                f"[Email] Sent to "
-                f"{recipient}"
-            )
-
-            return {
-
-                "success": True,
-
-                "recipient":
-                    recipient
-            }
-
+            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=20) as server:
+                server.starttls()
+                server.login(self.email_address, self.password)
+                server.sendmail(self.email_address, [str(recipient).strip()], msg.as_string())
+            return {"success": True, "recipient": str(recipient).strip()}
         except Exception as error:
-
-            return {
-
-                "success": False,
-
-                "error":
-                    str(error)
-            }
+            return {"success": False, "error": str(error)}
 
 
-email_tool = (
-    EmailTool()
-)
+email_tool = EmailTool()
