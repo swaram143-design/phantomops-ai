@@ -408,7 +408,7 @@ return (
             <div className="w-3 h-3 rounded-full bg-green-400" />
 
             <p className="ml-4 text-sm text-zinc-400">
-              gram-runtime v1.0.0
+healthcare-revenue-pilot · example workflow
             </p>
 
           </div>
@@ -416,17 +416,17 @@ return (
           <div className="p-8 font-mono text-sm space-y-4 text-zinc-300">
 
             <p className="text-cyan-400">
-              $ gram boot --autonomous --all
+              $ pilot workflow --example
             </p>
 
-            <p>✓ GRAM Runtime initialized</p>
-            <p>→ RevenueOps agent ONLINE</p>
-            <p>→ MediOps agent ONLINE</p>
-            <p>→ Outreach agent ONLINE</p>
-            <p>✓ Autonomous orchestration active</p>
-            <p>⚡ Opportunity signal detected</p>
-            <p>✓ Proposal generated</p>
-            <p>→ Followup automation scheduled</p>
+            <p>✓ Example enquiry received</p>
+            <p>→ Enquiry assigned to staff</p>
+            <p>→ Follow-up date recorded</p>
+            <p>→ Appointment status updated</p>
+            <p>✓ Unresolved enquiries flagged</p>
+            <p>⚡ Weekly report prepared</p>
+            <p>✓ Pilot results reviewed</p>
+            <p>→ Approved reminders queued</p>
 
           </div>
 
