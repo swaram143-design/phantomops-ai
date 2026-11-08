@@ -674,7 +674,7 @@ return (
           <div className="relative z-10">
 
             <p className="text-zinc-500 text-sm">
-              AI Proposal Speed
+              Pilot Scope Speed
             </p>
 
             <h3 className="text-6xl font-black mt-4">
@@ -786,7 +786,7 @@ return (
 
       <p className="text-zinc-400 text-xl max-w-3xl mx-auto leading-relaxed">
 
-        Simulate autonomous proposal generation powered by the PhantomOps infrastructure runtime.
+        Preview the proposed 14-day healthcare enquiry pilot. This is an illustrative scope preview, not a live deployment or performance claim.
 
       </p>
 
@@ -859,7 +859,7 @@ return (
             >
 
               <span className="relative z-10">
-                Generate AI Proposal
+                Preview Pilot Scope
               </span>
 
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.55),transparent)] translate-x-[-120%] group-hover:translate-x-[120%]" />
@@ -1033,7 +1033,7 @@ return (
                 </p>
 
                 <h4 className="text-2xl font-black">
-                  AI Proposal Generated Successfully
+                  Illustrative Pilot Scope Preview
                 </h4>
 
               </div>
